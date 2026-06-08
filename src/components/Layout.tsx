@@ -1,8 +1,10 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { BookText, Building2, LogOut } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useClient } from '@/contexts/ClientContext'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Select } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 
 const navItems = [
@@ -12,6 +14,7 @@ const navItems = [
 
 export function Layout() {
   const { profile, role, signOut } = useAuth()
+  const { clients, selected, setSelected } = useClient()
 
   return (
     <div className="min-h-screen">
@@ -40,6 +43,23 @@ export function Layout() {
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            {clients.length > 0 && (
+              <Select
+                className="h-8 w-40 text-sm"
+                value={selected?.id ?? ''}
+                onChange={(e) => {
+                  const c = clients.find((c) => c.id === e.target.value) ?? null
+                  setSelected(c)
+                }}
+                title="답변 작성 클라이언트 선택"
+              >
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            )}
             <span className="text-sm text-muted-foreground">
               {profile?.name}
             </span>

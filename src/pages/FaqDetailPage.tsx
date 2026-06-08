@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, History, Pencil, Trash2 } from 'lucide-react'
 import {
@@ -7,14 +7,24 @@ import {
   setFaqStatus,
   softDeleteFaq,
 } from '@/api/faqs'
-import type { Faq, FaqStatus, FaqVersion } from '@/types'
+import { listConfigs } from '@/api/clients'
+import type { ClientConfig, Faq, FaqStatus, FaqVersion } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
+import { useClient } from '@/contexts/ClientContext'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { StatusBadge } from '@/components/StatusBadge'
+import { OverrideBanner } from '@/components/OverrideBanner'
 import { Markdown } from '@/components/Markdown'
 import { cn, formatDate } from '@/lib/utils'
+
+function matchesOverride(faq: Faq, config: ClientConfig): boolean {
+  if (!config.applies_to) return true
+  const needle = config.applies_to.toLowerCase()
+  const hay = [faq.question, faq.category ?? '', ...(faq.tags ?? [])].join(' ').toLowerCase()
+  return hay.includes(needle)
+}
 
 const NEXT_STATUS: Record<FaqStatus, { to: FaqStatus; label: string }[]> = {
   draft: [{ to: 'verified', label: '검증 승격 (lead)' }],
@@ -26,11 +36,23 @@ export function FaqDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { canEdit, isLead } = useAuth()
+  const { selected: selectedClient } = useClient()
   const [faq, setFaq] = useState<Faq | null>(null)
   const [versions, setVersions] = useState<FaqVersion[]>([])
+  const [allConfigs, setAllConfigs] = useState<ClientConfig[]>([])
   const [showHistory, setShowHistory] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  const overrides = useMemo(
+    () =>
+      faq
+        ? allConfigs.filter(
+            (c) => c.rule_type === 'override' && matchesOverride(faq, c),
+          )
+        : [],
+    [faq, allConfigs],
+  )
 
   async function reload() {
     if (!id) return
@@ -43,6 +65,13 @@ export function FaqDetailPage() {
     void reload()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  useEffect(() => {
+    if (!selectedClient) { setAllConfigs([]); return }
+    listConfigs(selectedClient.id)
+      .then(setAllConfigs)
+      .catch(() => setAllConfigs([]))
+  }, [selectedClient])
 
   async function handleStatus(to: FaqStatus) {
     setBusy(true)
@@ -73,6 +102,17 @@ export function FaqDetailPage() {
       >
         <ArrowLeft className="h-4 w-4" /> 목록
       </Link>
+
+      {overrides.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-muted-foreground">
+            ⚠ {selectedClient?.name} override 규칙 ({overrides.length})
+          </p>
+          {overrides.map((c) => (
+            <OverrideBanner key={c.id} config={c} />
+          ))}
+        </div>
+      )}
 
       <Card>
         <CardHeader>
