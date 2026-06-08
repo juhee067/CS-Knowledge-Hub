@@ -3,9 +3,51 @@
 --  - viewer : 읽기 전용
 --  - editor : 콘텐츠 생성·수정 (clients, client_configs, faqs, inquiries)
 --  - lead   : 전체 권한 (삭제, 사용자 역할 관리, 감사 로그 열람)
--- 역할 헬퍼(public.can_edit / public.is_lead / public.current_role)는
--- 0002_functions_triggers 에서 SECURITY DEFINER 로 정의됨.
 -- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- 역할 헬퍼 함수 (RLS 정책보다 먼저 정의 필요)
+-- ----------------------------------------------------------------------------
+
+create or replace function public.current_user_role()
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select role from public.users where id = auth.uid()
+$$;
+
+create or replace function public.is_lead()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(public.current_user_role() = 'lead', false)
+$$;
+
+create or replace function public.can_edit()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(public.current_user_role() in ('editor', 'lead'), false)
+$$;
+
+create or replace function public.is_editor_or_lead()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select public.can_edit()
+$$;
 
 -- ----------------------------------------------------------------------------
 -- RLS 활성화
