@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { BookText, Building2, LogOut, Search, Upload, Inbox, Zap } from 'lucide-react'
+import { BookText, Building2, LogOut, Search, Upload, Inbox, Zap, Layers } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useClient } from '@/contexts/ClientContext'
 import { Button } from '@/components/ui/button'
@@ -11,8 +11,9 @@ const navItems = [
   { to: '/search',  label: '검색',      icon: Search },
   { to: '/faqs',    label: 'FAQ',        icon: BookText },
   { to: '/clients', label: '클라이언트', icon: Building2 },
-  { to: '/inbox',   label: '수집현황',   icon: Inbox },
-  { to: '/quick',   label: '빠른입력',   icon: Zap },
+  { to: '/inbox',    label: '수집현황',   icon: Inbox },
+  { to: '/assetize', label: '자산화큐',   icon: Layers },
+  { to: '/quick',    label: '빠른입력',   icon: Zap },
   { to: '/import',  label: '이관',       icon: Upload },
 ]
 

@@ -12,6 +12,8 @@ import { SearchPage } from '@/pages/SearchPage'
 import { ImportPage } from '@/pages/ImportPage'
 import { InboxPage } from '@/pages/InboxPage'
 import { QuickInputPage } from '@/pages/QuickInputPage'
+import { ProcessInquiryPage } from '@/pages/ProcessInquiryPage'
+import { AssetizeQueuePage } from '@/pages/AssetizeQueuePage'
 
 export default function App() {
   return (
@@ -30,6 +32,8 @@ export default function App() {
               <Route path="/faqs/:id/edit" element={<FaqEditPage />} />
               <Route path="/clients" element={<ClientsPage />} />
               <Route path="/inbox" element={<InboxPage />} />
+              <Route path="/process/:id" element={<ProcessInquiryPage />} />
+              <Route path="/assetize" element={<AssetizeQueuePage />} />
               <Route path="/quick" element={<QuickInputPage />} />
               <Route path="/import" element={<ImportPage />} />
             </Route>

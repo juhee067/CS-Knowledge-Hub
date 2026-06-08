@@ -188,12 +188,93 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['inquiries']['Insert']>
         Relationships: []
       }
+      classification_feedback: {
+        Row: {
+          id: string
+          inquiry_id: string | null
+          predicted_category: string | null
+          corrected_category: string | null
+          predicted_client_id: string | null
+          corrected_client_id: string | null
+          prediction_score: number | null
+          accepted: boolean
+          actor_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          inquiry_id?: string | null
+          predicted_category?: string | null
+          corrected_category?: string | null
+          predicted_client_id?: string | null
+          corrected_client_id?: string | null
+          prediction_score?: number | null
+          accepted?: boolean
+          actor_id?: string | null
+          created_at?: string
+        }
+        Update: Partial<
+          Database['public']['Tables']['classification_feedback']['Insert']
+        >
+        Relationships: []
+      }
     }
-    Views: Record<string, never>
+    Views: {
+      assetize_candidates: {
+        Row: {
+          category: string
+          open_count: number
+          avg_score: number
+          first_seen: string
+          last_seen: string
+          latest_inquiry_id: string
+          sample_text: string
+        }
+        Relationships: []
+      }
+      channel_summary: {
+        Row: {
+          source: string
+          total: number
+          open_count: number
+          open_rate: number
+          last_received_at: string | null
+          errors_24h: number
+        }
+        Relationships: []
+      }
+      channel_daily_stats: {
+        Row: {
+          source: string
+          day: string
+          total: number
+          open_count: number
+          answered_count: number
+          assetized_count: number
+        }
+        Relationships: []
+      }
+    }
     Functions: {
       update_faq_status: {
         Args: { p_faq_id: string; p_new_status: FaqStatus }
         Returns: undefined
+      }
+      match_faqs: {
+        Args: {
+          p_embedding: number[]
+          p_limit?: number
+          p_client_id?: string | null
+        }
+        Returns: Array<{
+          id: string
+          question: string
+          answer: string
+          category: string | null
+          tags: string[] | null
+          status: FaqStatus
+          similarity: number
+        }>
       }
       search_knowledge: {
         Args: {
