@@ -8,6 +8,10 @@ import { FaqListPage } from '@/pages/FaqListPage'
 import { FaqEditPage } from '@/pages/FaqEditPage'
 import { FaqDetailPage } from '@/pages/FaqDetailPage'
 import { ClientsPage } from '@/pages/ClientsPage'
+import { SearchPage } from '@/pages/SearchPage'
+import { ImportPage } from '@/pages/ImportPage'
+import { InboxPage } from '@/pages/InboxPage'
+import { QuickInputPage } from '@/pages/QuickInputPage'
 
 export default function App() {
   return (
@@ -18,15 +22,19 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
-              <Route index element={<Navigate to="/faqs" replace />} />
+              <Route index element={<Navigate to="/search" replace />} />
+              <Route path="/search" element={<SearchPage />} />
               <Route path="/faqs" element={<FaqListPage />} />
               <Route path="/faqs/new" element={<FaqEditPage />} />
               <Route path="/faqs/:id" element={<FaqDetailPage />} />
               <Route path="/faqs/:id/edit" element={<FaqEditPage />} />
               <Route path="/clients" element={<ClientsPage />} />
+              <Route path="/inbox" element={<InboxPage />} />
+              <Route path="/quick" element={<QuickInputPage />} />
+              <Route path="/import" element={<ImportPage />} />
             </Route>
           </Route>
-          <Route path="*" element={<Navigate to="/faqs" replace />} />
+          <Route path="*" element={<Navigate to="/search" replace />} />
         </Routes>
       </BrowserRouter>
       </ClientProvider>

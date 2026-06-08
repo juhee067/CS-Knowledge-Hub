@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { BookText, Building2, LogOut } from 'lucide-react'
+import { BookText, Building2, LogOut, Search, Upload, Inbox, Zap } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useClient } from '@/contexts/ClientContext'
 import { Button } from '@/components/ui/button'
@@ -8,8 +8,12 @@ import { Select } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { to: '/faqs', label: 'FAQ', icon: BookText },
+  { to: '/search',  label: '검색',      icon: Search },
+  { to: '/faqs',    label: 'FAQ',        icon: BookText },
   { to: '/clients', label: '클라이언트', icon: Building2 },
+  { to: '/inbox',   label: '수집현황',   icon: Inbox },
+  { to: '/quick',   label: '빠른입력',   icon: Zap },
+  { to: '/import',  label: '이관',       icon: Upload },
 ]
 
 export function Layout() {

@@ -154,12 +154,70 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['audit_logs']['Insert']>
         Relationships: []
       }
+      inquiries: {
+        Row: {
+          id: string
+          raw_text: string
+          client_id: string | null
+          source: string
+          source_ref: string | null
+          intake_raw: Record<string, unknown> | null
+          predicted_category: string | null
+          prediction_score: number | null
+          status: 'open' | 'answered' | 'assetized'
+          answer_text: string | null
+          answered_by: string | null
+          linked_faq_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          raw_text: string
+          client_id?: string | null
+          source?: string
+          source_ref?: string | null
+          intake_raw?: Record<string, unknown> | null
+          predicted_category?: string | null
+          prediction_score?: number | null
+          status?: 'open' | 'answered' | 'assetized'
+          answer_text?: string | null
+          answered_by?: string | null
+          linked_faq_id?: string | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['inquiries']['Insert']>
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {
       update_faq_status: {
         Args: { p_faq_id: string; p_new_status: FaqStatus }
         Returns: undefined
+      }
+      search_knowledge: {
+        Args: {
+          p_query: string
+          p_embedding?: number[] | null
+          p_client_id?: string | null
+          p_category?: string | null
+          p_status?: string
+          p_limit?: number
+          p_rrf_k?: number
+        }
+        Returns: Array<{
+          id: string
+          question: string
+          answer: string
+          category: string | null
+          tags: string[] | null
+          status: FaqStatus
+          updated_at: string
+          fts_rank: number
+          vec_rank: number
+          rrf_score: number
+          client_configs: Record<string, unknown>[]
+        }>
       }
     }
     Enums: Record<string, never>
