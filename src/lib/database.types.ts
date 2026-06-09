@@ -274,6 +274,24 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['faq_categories']['Insert']>
         Relationships: []
       }
+      channels: {
+        Row: {
+          id: number
+          key: string
+          label: string
+          sort_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          key: string
+          label: string
+          sort_order?: number
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['channels']['Insert']>
+        Relationships: []
+      }
       classification_feedback: {
         Row: {
           id: string

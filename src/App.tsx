@@ -14,6 +14,7 @@ import { ProcessInquiryPage } from '@/pages/ProcessInquiryPage'
 import { AssetizeQueuePage } from '@/pages/AssetizeQueuePage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { AskHubPage } from '@/pages/AskHubPage'
+import { DashboardPage } from '@/pages/DashboardPage'
 
 export default function App() {
   return (
@@ -23,7 +24,8 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
-              <Route index element={<Navigate to="/search" replace />} />
+              <Route index element={<Navigate to="/home" replace />} />
+              <Route path="/home" element={<DashboardPage />} />
               <Route path="/ask" element={<AskHubPage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/faqs" element={<FaqListPage />} />
@@ -38,7 +40,7 @@ export default function App() {
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>
-          <Route path="*" element={<Navigate to="/search" replace />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

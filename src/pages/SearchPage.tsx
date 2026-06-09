@@ -93,7 +93,7 @@ export function SearchPage() {
             <Input
               ref={inputRef}
               className="pl-9 text-base"
-              placeholder="검색어 입력…  예) 비밀번호 재설정, 환불 정책"
+              placeholder="검색어 입력"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />

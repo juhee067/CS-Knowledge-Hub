@@ -38,6 +38,7 @@ export interface InquiryFilter {
   source?: string
   status?: InquiryStatus | 'all'
   client_id?: string | null
+  category?: string | null
 }
 
 export async function listInquiries(filter: InquiryFilter = {}): Promise<Inquiry[]> {
@@ -50,6 +51,9 @@ export async function listInquiries(filter: InquiryFilter = {}): Promise<Inquiry
   if (filter.source) query = query.eq('source', filter.source)
   if (filter.status && filter.status !== 'all') query = query.eq('status', filter.status)
   if (filter.client_id) query = query.eq('client_id', filter.client_id)
+  // 자산화 큐의 '미분류' 묶음은 predicted_category IS NULL 을 의미
+  if (filter.category === '미분류') query = query.is('predicted_category', null)
+  else if (filter.category) query = query.eq('predicted_category', filter.category)
 
   const { data, error } = await query
   if (error) throw error

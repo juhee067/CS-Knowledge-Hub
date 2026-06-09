@@ -100,7 +100,7 @@ export function AssetizeQueuePage() {
               <button
                 key={c.category}
                 type="button"
-                onClick={() => navigate(`/process/${c.latest_inquiry_id}`)}
+                onClick={() => navigate(`/inbox?status=open&category=${encodeURIComponent(c.category)}`)}
                 className="flex w-full items-center gap-4 rounded-lg border bg-card p-4 text-left transition-colors hover:bg-accent/40"
               >
                 <span className="w-6 shrink-0 text-center text-lg font-bold text-muted-foreground">
@@ -127,7 +127,7 @@ export function AssetizeQueuePage() {
                   </div>
                 </div>
                 <span className="flex shrink-0 items-center gap-1 text-sm font-medium text-primary">
-                  처리 <ChevronRight className="h-4 w-4" />
+                  목록 <ChevronRight className="h-4 w-4" />
                 </span>
               </button>
             )

@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react'
-import { Upload, Link2, FileText, CheckCircle2, XCircle, Download } from 'lucide-react'
-import { intakeBulk, intakePaste, type BulkRow, type BulkResult } from '@/api/intake'
+import { Upload, Link2, CheckCircle2, XCircle, Download, FileDown } from 'lucide-react'
+import { intakeBulk, type BulkRow, type BulkResult } from '@/api/intake'
 import { listClients } from '@/api/clients'
 import type { Client } from '@/types'
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
@@ -14,7 +13,7 @@ import { Badge } from '@/components/ui/badge'
 
 // ─── 탭 타입 ───────────────────────────────────────────────────────────────
 
-type Tab = 'csv' | 'wiki' | 'paste'
+type Tab = 'csv' | 'wiki'
 
 // ─── CSV 파싱 (의존성 없이) ──────────────────────────────────────────────
 
@@ -41,6 +40,22 @@ function parseCSV(text: string): string[][] {
     rows.push(cells)
   }
   return rows
+}
+
+// ─── CSV 템플릿 다운로드 ───────────────────────────────────────────────────
+
+function downloadTemplate() {
+  const lines = [
+    'raw_text,client_slug,source_ref',
+    '"비밀번호를 잊어버렸어요. 재설정 방법을 알려주세요",korea-univ,TICKET-1001',
+    '"환불 규정이 어떻게 되나요?",,TICKET-1002',
+  ]
+  // BOM 추가 — Excel 한글 깨짐 방지
+  const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = 'import_template.csv'; a.click()
+  URL.revokeObjectURL(url)
 }
 
 // ─── 오류 행 CSV 다운로드 ─────────────────────────────────────────────────
@@ -115,6 +130,22 @@ function CsvTab({ clients }: { clients: Client[] }) {
 
   return (
     <div className="space-y-6">
+      {/* CSV 구조 안내 + 템플릿 */}
+      <div className="flex items-start justify-between gap-4 rounded-lg border bg-muted/30 p-4">
+        <div className="space-y-1.5 text-sm">
+          <p className="font-medium">CSV 구조</p>
+          <ul className="space-y-0.5 text-xs text-muted-foreground">
+            <li>• <code className="rounded bg-muted px-1">raw_text</code> <span className="text-destructive">(필수)</span> — 문의 내용</li>
+            <li>• <code className="rounded bg-muted px-1">client_slug</code> (선택) — 고객사 식별자(설정의 slug와 일치 시 연결)</li>
+            <li>• <code className="rounded bg-muted px-1">source_ref</code> (선택) — 원본 식별자(중복 제거 키)</li>
+          </ul>
+          <p className="text-xs text-muted-foreground">첫 행은 헤더, UTF-8 권장. 업로드 후 컬럼을 매핑합니다.</p>
+        </div>
+        <Button variant="secondary" size="sm" className="shrink-0" onClick={downloadTemplate}>
+          <FileDown className="mr-1.5 h-4 w-4" /> 템플릿 다운로드
+        </Button>
+      </div>
+
       {/* 파일 선택 */}
       <div
         className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/40 p-10 text-center transition hover:border-primary/50"
@@ -281,72 +312,11 @@ function WikiTab() {
   )
 }
 
-// ─── 수동 복붙 탭 ─────────────────────────────────────────────────────────
-
-function PasteTab({ clients }: { clients: Client[] }) {
-  const [text, setText] = useState('')
-  const [clientSlug, setClientSlug] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [done, setDone] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!text.trim()) return
-    setLoading(true); setError(null); setDone(false)
-    try {
-      await intakePaste({ raw_text: text.trim(), client_slug: clientSlug || undefined })
-      setDone(true)
-      setText(''); setClientSlug('')
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '저장 실패')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label htmlFor="paste-text">문의 내용</Label>
-        <Textarea
-          id="paste-text"
-          className="mt-1 min-h-40"
-          placeholder="문의 내용을 붙여넣거나 직접 입력하세요…"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-      </div>
-      <div className="max-w-xs">
-        <Label htmlFor="paste-client">클라이언트 (선택)</Label>
-        <Select
-          id="paste-client"
-          value={clientSlug}
-          onChange={(e) => setClientSlug(e.target.value)}
-        >
-          <option value="">없음</option>
-          {clients.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
-        </Select>
-      </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      {done && (
-        <div className="flex items-center gap-2 text-sm text-green-700">
-          <CheckCircle2 className="h-4 w-4" /> 문의가 저장되었습니다.
-        </div>
-      )}
-      <Button type="submit" disabled={loading || !text.trim()}>
-        {loading ? '저장 중…' : '문의 저장'}
-      </Button>
-    </form>
-  )
-}
-
 // ─── 메인 페이지 ──────────────────────────────────────────────────────────
 
 const TABS: { id: Tab; label: string; icon: typeof Upload }[] = [
   { id: 'csv', label: 'CSV/Excel 업로드', icon: Upload },
   { id: 'wiki', label: '위키 URL 임포트', icon: Link2 },
-  { id: 'paste', label: '수동 복붙 입력', icon: FileText },
 ]
 
 export function ImportPage() {
@@ -362,7 +332,7 @@ export function ImportPage() {
       <div>
         <h1 className="text-2xl font-bold">데이터 이관</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          CSV 파일, 위키 페이지, 또는 직접 입력으로 문의·FAQ 초안을 가져옵니다.
+          CSV 파일 또는 위키 페이지로 문의·FAQ 초안을 가져옵니다.
         </p>
       </div>
 
@@ -390,7 +360,6 @@ export function ImportPage() {
         <CardContent className="p-6">
           {tab === 'csv' && <CsvTab clients={clients} />}
           {tab === 'wiki' && <WikiTab />}
-          {tab === 'paste' && <PasteTab clients={clients} />}
         </CardContent>
       </Card>
 

@@ -9,6 +9,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Phone, MessageSquare, Mail, Mic, Send, CheckCircle2, FileText } from 'lucide-react'
 import { intakePaste } from '@/api/intake'
 import { listClients } from '@/api/clients'
+import { listCategories } from '@/api/categories'
+import { listChannels, type Channel } from '@/api/channels'
 import type { Client } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -16,14 +18,11 @@ import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 
-const CHANNELS = [
-  { value: 'manual',      label: '직접 입력',    icon: MessageSquare },
-  { value: 'phone',       label: '전화',          icon: Phone },
-  { value: 'email',       label: '이메일',        icon: Mail },
-  { value: 'kakao',       label: '카카오',        icon: Mic },
-  { value: 'sms',         label: 'SMS',           icon: MessageSquare },
-  { value: 'google_form', label: 'Google Forms',  icon: FileText },
-]
+// 알려진 채널 key → 아이콘 (없으면 기본 아이콘)
+const CHANNEL_ICON: Record<string, typeof MessageSquare> = {
+  manual: MessageSquare, phone: Phone, email: Mail, kakao: Mic,
+  sms: MessageSquare, google_form: FileText,
+}
 
 interface SubmittedItem {
   id: string
@@ -35,8 +34,11 @@ interface SubmittedItem {
 export function QuickInputPage() {
   const [channel, setChannel] = useState('manual')
   const [clientSlug, setClientSlug] = useState('')
+  const [category, setCategory] = useState('')
   const [content, setContent] = useState('')
   const [clients, setClients] = useState<Client[]>([])
+  const [categories, setCategories] = useState<string[]>([])
+  const [channels, setChannels] = useState<Channel[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [history, setHistory] = useState<SubmittedItem[]>([])
@@ -44,7 +46,15 @@ export function QuickInputPage() {
 
   useEffect(() => {
     listClients().then(setClients).catch(() => {})
+    listCategories().then((cats) => setCategories(cats.map((c) => c.name))).catch(() => {})
+    listChannels().then((chs) => {
+      setChannels(chs)
+      if (chs.length && !chs.some((c) => c.key === 'manual')) setChannel(chs[0].key)
+    }).catch(() => {})
   }, [])
+
+  const channelLabel = (key: string) =>
+    channels.find((c) => c.key === key)?.label ?? key
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -55,11 +65,12 @@ export function QuickInputPage() {
       const { id } = await intakePaste({
         raw_text: `[${channel}] ${content.trim()}`,
         client_slug: clientSlug || undefined,
+        category: category || null,
       })
       setHistory((prev) => [
         {
           id,
-          channel: CHANNELS.find((c) => c.value === channel)?.label ?? channel,
+          channel: channelLabel(channel),
           content: content.trim(),
           ts: new Date().toLocaleTimeString('ko-KR'),
         },
@@ -74,8 +85,7 @@ export function QuickInputPage() {
     }
   }
 
-  const selectedMeta = CHANNELS.find((c) => c.value === channel)
-  const Icon = selectedMeta?.icon ?? MessageSquare
+  const Icon = CHANNEL_ICON[channel] ?? MessageSquare
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -96,8 +106,8 @@ export function QuickInputPage() {
               value={channel}
               onChange={(e) => setChannel(e.target.value)}
             >
-              {CHANNELS.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
+              {channels.map((c) => (
+                <option key={c.key} value={c.key}>{c.label}</option>
               ))}
             </Select>
           </div>
@@ -111,6 +121,19 @@ export function QuickInputPage() {
               <option value="">없음</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.slug}>{c.name}</option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="qi-category">카테고리</Label>
+            <Select
+              id="qi-category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              <option value="">미분류</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>{c}</option>
               ))}
             </Select>
           </div>
@@ -128,7 +151,7 @@ export function QuickInputPage() {
             id="qi-content"
             ref={textareaRef}
             className="mt-1 min-h-32 resize-none"
-            placeholder={`${selectedMeta?.label ?? '채널'} 문의 내용을 입력하세요…`}
+            placeholder={`${channelLabel(channel)} 문의 내용을 입력하세요…`}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={(e) => {
