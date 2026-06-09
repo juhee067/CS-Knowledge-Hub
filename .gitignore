@@ -12,10 +12,10 @@ dist
 dist-ssr
 *.local
 
-# env
+# env — 모든 .env* 무시, 템플릿(.env.example)만 추적
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*

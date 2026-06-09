@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { RefreshCw, AlertCircle, CheckCircle2, Clock, Archive } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { RefreshCw, AlertCircle, CheckCircle2, Clock, Archive, Sparkles } from 'lucide-react'
 import {
   getChannelSummary,
   listInquiries,
@@ -143,6 +144,14 @@ function InquiryRow({
           <Icon className="h-3 w-3" />
           {sc.label}
         </span>
+      </td>
+      <td className="px-3 py-2 align-middle">
+        <Link
+          to={`/process/${inquiry.id}`}
+          className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium text-primary hover:bg-accent"
+        >
+          <Sparkles className="h-3 w-3" /> 처리
+        </Link>
       </td>
     </tr>
   )
@@ -316,6 +325,7 @@ export function InboxPage() {
                 <th className="px-3 py-2 text-left">문의 내용</th>
                 <th className="px-3 py-2 text-left w-32">상태 변경</th>
                 <th className="px-3 py-2 text-left w-20">현재</th>
+                <th className="px-3 py-2 text-left w-20">처리</th>
               </tr>
             </thead>
             <tbody>

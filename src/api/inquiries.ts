@@ -10,7 +10,9 @@ export interface Inquiry {
   source_ref: string | null
   status: InquiryStatus
   predicted_category: string | null
+  prediction_score: number | null
   answer_text: string | null
+  linked_faq_id: string | null
   created_at: string
 }
 
@@ -80,6 +82,29 @@ export async function updateInquiryStatus(id: string, status: InquiryStatus): Pr
   const { error } = await supabase
     .from('inquiries')
     .update({ status } as never)
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function getInquiry(id: string): Promise<Inquiry | null> {
+  const { data, error } = await supabase
+    .from('inquiries')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
+  if (error) throw error
+  return data as Inquiry | null
+}
+
+/** 분류 결과(추정 카테고리·신뢰도) 저장 — 자산화 큐 반영용 */
+export async function saveClassification(
+  id: string,
+  predicted_category: string | null,
+  prediction_score: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from('inquiries')
+    .update({ predicted_category, prediction_score } as never)
     .eq('id', id)
   if (error) throw error
 }
