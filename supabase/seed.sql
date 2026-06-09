@@ -1,6 +1,6 @@
 -- ============================================================================
 -- 시드 데이터 — Veluga (RAG 채널 + 에이전트 오케스트레이션 플랫폼)
--- 고객은 교육기관 중심. clients 4곳 · client_configs 6개 · FAQ 20건 · inquiries 20건
+-- 고객은 교육기관 중심. clients 4곳 · FAQ 20건 · inquiries 20건
 -- ============================================================================
 
 -- ─── 클라이언트 4곳 (자사 + 교육기관) ─────────────────────────────────────────
@@ -12,38 +12,6 @@ insert into public.clients (id, name, slug, description) values
   ('dddddddd-dddd-dddd-dddd-dddddddddddd', '메가스터디교육',  'megastudy', '이러닝 수강생 CS 자동화 채널.')
 on conflict (id) do nothing;
 
--- ─── 클라이언트 설정 카드 ─────────────────────────────────────────────────────
-
-insert into public.client_configs (client_id, title, body, rule_type, applies_to, severity) values
-  -- 한양대학교
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-   '학번·개인정보 노출 금지',
-   '학번, 연락처, 성적 등 개인정보를 답변 본문에 절대 포함하지 마세요. 본인 확인이 필요한 문의는 학사지원팀 연결로 안내합니다.',
-   'override', '개인정보', 'critical'),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-   '학사 일정은 공식 포털로 안내',
-   '학사 일정은 학기마다 변동됩니다. 구체적 날짜를 단정하지 말고 `portal.hanyang.ac.kr` 공지 링크로 안내하세요.',
-   'note', '학사일정', 'warning'),
-  -- 세종사이버대학교
-  ('cccccccc-cccc-cccc-cccc-cccccccccccc',
-   '수강 정정 기간 한정',
-   '수강 신청·정정은 **학기 시작 후 2주 이내**만 가능합니다. 기한이 지난 문의는 정정 불가 안내 후 학사지원팀으로 연결하세요.',
-   'override', '수강신청', 'warning'),
-  ('cccccccc-cccc-cccc-cccc-cccccccccccc',
-   '성적·평가 답변 제한',
-   '성적 산정 기준·평가 점수는 교수 권한입니다. 챗봇은 일반 규정만 안내하고 개별 점수 문의는 담당 교수로 안내하세요.',
-   'override', '성적', 'critical'),
-  -- 메가스터디교육
-  ('dddddddd-dddd-dddd-dddd-dddddddddddd',
-   '인강 환불 정책 커스텀',
-   '인터넷 강의 환불은 **수강 시작 후 7일 이내, 진도율 10% 미만**일 때만 가능합니다. 일반 환불 FAQ와 기준이 다릅니다.',
-   'override', '환불', 'warning'),
-  -- 벨루가AI (자사)
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-   'V-크레딧 잔량 알림 정책',
-   '잔여 V-크레딧 20% 도달 시 관리자에게 알림이 발송됩니다. 운영 중인 채널은 모니터링으로 사전 업그레이드를 권장하세요.',
-   'note', 'V-크레딧', 'info')
-on conflict do nothing;
 
 -- ─── FAQ 20건 ─────────────────────────────────────────────────────────────────
 

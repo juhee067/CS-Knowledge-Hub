@@ -1,16 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { FaqStatus } from '@/types'
 
-export interface ClientConfigSnippet {
-  id: string
-  client_id: string
-  title: string
-  body: string
-  rule_type: string
-  severity: string
-  applies_to: string | null
-}
-
 export interface SearchResult {
   id: string
   question: string
@@ -22,7 +12,6 @@ export interface SearchResult {
   fts_rank: number
   vec_rank: number
   rrf_score: number
-  client_configs: ClientConfigSnippet[]
 }
 
 export interface SearchFilter {

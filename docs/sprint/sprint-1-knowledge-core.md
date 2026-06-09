@@ -19,9 +19,9 @@
 - [x] FAQ CRUD (마크다운 본문, 카테고리·태그) — FR-2.1
 - [x] FAQ 상태 전이 `draft → verified → deprecated` (RPC) — FR-2.2
 - [x] `faq_versions` 변경 이력 트리거 + diff 조회 UI — FR-2.3
-- [x] 클라이언트 CRUD + 설정 카드(`client_configs`) CRUD — FR-3.1
-- [x] override `applies_to` 연결 + severity별 색상 표시 — FR-3.2
-- [x] 답변 화면 override 경고 배너 (critical은 확인 체크) — FR-3.3
+- [x] 클라이언트 CRUD — FR-3.1 (설정 카드 기능 제거됨)
+- [ ] ~~override `applies_to` 연결 + severity별 색상 표시~~ — FR-3.2 (제거됨)
+- [ ] ~~답변 화면 override 경고 배너 (critical은 확인 체크)~~ — FR-3.3 (제거됨)
 - [x] 역할별 RLS 정책 완성 (viewer/editor/lead) — FR-6.1
 - [x] `audit_logs` 기록 (create/update/delete/status_change) — FR-6.2
 

@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import {
-  ArrowLeft, Sparkles, Wand2, AlertTriangle, Info, FileUp, GitMerge,
+  ArrowLeft, Sparkles, Wand2, FileUp, GitMerge,
   CheckCircle2, Clock, ChevronRight,
 } from 'lucide-react'
 import {
@@ -16,15 +16,14 @@ import {
   type ClassifyResult, type SimilarFaq,
 } from '@/api/classify'
 import { getInquiry, saveClassification, type Inquiry } from '@/api/inquiries'
-import { listClients, findOverrides } from '@/api/clients'
-import type { Client, ClientConfig } from '@/types'
+import { listClients } from '@/api/clients'
+import type { Client } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Markdown } from '@/components/Markdown'
 import { formatDate } from '@/lib/utils'
 
 const CATEGORIES = [
@@ -112,7 +111,6 @@ export function ProcessInquiryPage() {
   const [mode, setMode] = useState<'new' | 'merge'>('new')
   const [mergeFaqId, setMergeFaqId] = useState<string | null>(null)
 
-  const [overrides, setOverrides] = useState<ClientConfig[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
@@ -163,12 +161,6 @@ export function ProcessInquiryPage() {
     void run()
     return () => { alive = false }
   }, [id])
-
-  // 2) 클라이언트·카테고리 override 경고 (FR-3.3 재사용)
-  useEffect(() => {
-    if (!clientId || !category) { setOverrides([]); return }
-    findOverrides(clientId, category).then(setOverrides).catch(() => setOverrides([]))
-  }, [clientId, category])
 
   function applySimilar(faq: SimilarFaq) {
     if (mergeFaqId === faq.id) {
@@ -383,23 +375,6 @@ export function ProcessInquiryPage() {
               <GitMerge className="mr-1 inline h-3.5 w-3.5" /> 기존 업데이트
             </button>
           </div>
-
-          {/* 클라이언트 override 경고 */}
-          {overrides.length > 0 && (
-            <div className="space-y-1.5">
-              {overrides.map((o) => (
-                <div key={o.id} className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-2.5 text-xs">
-                  {o.severity === 'critical'
-                    ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                    : <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />}
-                  <div className="min-w-0">
-                    <p className="font-medium">{o.title}</p>
-                    <div className="mt-0.5 text-muted-foreground"><Markdown>{o.body}</Markdown></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="pi-client" className="text-xs">클라이언트</Label>

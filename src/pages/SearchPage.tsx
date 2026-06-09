@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, ChevronDown, ChevronUp, AlertTriangle, Info } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { searchKnowledge, type SearchResult, type SearchFilter } from '@/api/search'
 import { listClients } from '@/api/clients'
 import type { Client, FaqStatus } from '@/types'
@@ -11,63 +11,11 @@ import { Select } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/StatusBadge'
-import { Markdown } from '@/components/Markdown'
 import { formatDate } from '@/lib/utils'
 
 const CATEGORIES = [
   '계정/인증', '결제', '배송', '반품/환불', '상품', '기술지원', '기타',
 ]
-
-function SeverityIcon({ severity }: { severity: string }) {
-  if (severity === 'critical') return <AlertTriangle className="h-4 w-4 text-destructive" />
-  if (severity === 'warning') return <AlertTriangle className="h-4 w-4 text-yellow-500" />
-  return <Info className="h-4 w-4 text-blue-500" />
-}
-
-function ClientConfigBadge({ configs }: { configs: SearchResult['client_configs'] }) {
-  const [open, setOpen] = useState(false)
-  if (!configs || configs.length === 0) return null
-
-  const overrides = configs.filter((c) => c.rule_type === 'override')
-  const hasOverride = overrides.length > 0
-
-  return (
-    <div className="mt-2">
-      <button
-        type="button"
-        onClick={(e) => { e.preventDefault(); setOpen((v) => !v) }}
-        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-      >
-        {hasOverride && <AlertTriangle className="h-3 w-3 text-destructive" />}
-        <span>클라이언트 설정 {configs.length}개</span>
-        {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-      </button>
-      {open && (
-        <div className="mt-2 space-y-2">
-          {configs.map((c) => (
-            <div
-              key={c.id}
-              className={`rounded-md border p-3 text-sm ${
-                c.rule_type === 'override'
-                  ? 'border-destructive/50 bg-destructive/5'
-                  : c.severity === 'warning'
-                  ? 'border-yellow-200 bg-yellow-50'
-                  : 'border-border bg-muted/30'
-              }`}
-            >
-              <div className="mb-1 flex items-center gap-2">
-                <SeverityIcon severity={c.severity} />
-                <span className="font-medium">{c.title}</span>
-                <Badge variant="outline" className="text-xs">{c.rule_type}</Badge>
-              </div>
-              <Markdown>{c.body}</Markdown>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
 
 function ResultCard({ result }: { result: SearchResult }) {
   return (
@@ -88,7 +36,6 @@ function ResultCard({ result }: { result: SearchResult }) {
             <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
               {result.answer}
             </p>
-            <ClientConfigBadge configs={result.client_configs} />
           </div>
           <span className="shrink-0 text-xs text-muted-foreground">
             {formatDate(result.updated_at)}
@@ -230,7 +177,7 @@ export function SearchPage() {
       {!searched && !loading && (
         <div className="py-12 text-center text-muted-foreground">
           <Search className="mx-auto mb-3 h-8 w-8 opacity-40" />
-          <p>검색어를 입력하면 FAQ와 클라이언트별 설정이 함께 표시됩니다.</p>
+          <p>검색어를 입력하면 FAQ가 표시됩니다.</p>
           <p className="mt-1 text-sm opacity-70">FTS + 의미 검색(pgvector) 하이브리드</p>
         </div>
       )}
