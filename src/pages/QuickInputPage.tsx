@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
-import { Phone, MessageSquare, Mail, Mic, Send, CheckCircle2 } from 'lucide-react'
+import { Phone, MessageSquare, Mail, Mic, Send, CheckCircle2, FileText } from 'lucide-react'
 import { intakePaste } from '@/api/intake'
 import { listClients } from '@/api/clients'
 import type { Client } from '@/types'
@@ -17,11 +17,12 @@ import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 
 const CHANNELS = [
-  { value: 'manual',     label: '직접 입력', icon: MessageSquare },
-  { value: 'phone',      label: '전화',       icon: Phone },
-  { value: 'email',      label: '이메일',     icon: Mail },
-  { value: 'kakao',      label: '카카오',     icon: Mic },
-  { value: 'sms',        label: 'SMS',        icon: MessageSquare },
+  { value: 'manual',      label: '직접 입력',    icon: MessageSquare },
+  { value: 'phone',       label: '전화',          icon: Phone },
+  { value: 'email',       label: '이메일',        icon: Mail },
+  { value: 'kakao',       label: '카카오',        icon: Mic },
+  { value: 'sms',         label: 'SMS',           icon: MessageSquare },
+  { value: 'google_form', label: 'Google Forms',  icon: FileText },
 ]
 
 interface SubmittedItem {
