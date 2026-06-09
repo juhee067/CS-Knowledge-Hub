@@ -1,13 +1,11 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
-import { ClientProvider } from '@/contexts/ClientContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { Layout } from '@/components/Layout'
 import { LoginPage } from '@/pages/LoginPage'
 import { FaqListPage } from '@/pages/FaqListPage'
 import { FaqEditPage } from '@/pages/FaqEditPage'
 import { FaqDetailPage } from '@/pages/FaqDetailPage'
-import { ClientsPage } from '@/pages/ClientsPage'
 import { SearchPage } from '@/pages/SearchPage'
 import { ImportPage } from '@/pages/ImportPage'
 import { InboxPage } from '@/pages/InboxPage'
@@ -18,7 +16,6 @@ import { AssetizeQueuePage } from '@/pages/AssetizeQueuePage'
 export default function App() {
   return (
     <AuthProvider>
-      <ClientProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -30,7 +27,6 @@ export default function App() {
               <Route path="/faqs/new" element={<FaqEditPage />} />
               <Route path="/faqs/:id" element={<FaqDetailPage />} />
               <Route path="/faqs/:id/edit" element={<FaqEditPage />} />
-              <Route path="/clients" element={<ClientsPage />} />
               <Route path="/inbox" element={<InboxPage />} />
               <Route path="/process/:id" element={<ProcessInquiryPage />} />
               <Route path="/assetize" element={<AssetizeQueuePage />} />
@@ -41,7 +37,6 @@ export default function App() {
           <Route path="*" element={<Navigate to="/search" replace />} />
         </Routes>
       </BrowserRouter>
-      </ClientProvider>
     </AuthProvider>
   )
 }

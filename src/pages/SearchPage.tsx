@@ -4,7 +4,6 @@ import { Search } from 'lucide-react'
 import { searchKnowledge, type SearchResult, type SearchFilter } from '@/api/search'
 import { listClients } from '@/api/clients'
 import type { Client, FaqStatus } from '@/types'
-import { useClient } from '@/contexts/ClientContext'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
@@ -47,7 +46,6 @@ function ResultCard({ result }: { result: SearchResult }) {
 }
 
 export function SearchPage() {
-  const { selected: selectedClient } = useClient()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<FaqStatus | 'all'>('verified')
   const [category, setCategory] = useState('')
@@ -63,11 +61,6 @@ export function SearchPage() {
     listClients().then(setClients).catch(() => {})
     inputRef.current?.focus()
   }, [])
-
-  // 글로벌 선택 클라이언트 동기화
-  useEffect(() => {
-    setClientId(selectedClient?.id ?? '')
-  }, [selectedClient])
 
   async function doSearch(e?: React.FormEvent) {
     e?.preventDefault()
