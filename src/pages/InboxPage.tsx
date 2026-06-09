@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { RefreshCw, AlertCircle, CheckCircle2, Clock, Archive, Sparkles } from 'lucide-react'
 import {
   getChannelSummary,
@@ -11,11 +11,13 @@ import {
   type InquiryFilter,
 } from '@/api/inquiries'
 import { listClients } from '@/api/clients'
+import { listCategories } from '@/api/categories'
+import { listChannels, type Channel } from '@/api/channels'
 import type { Client } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select } from '@/components/ui/select'
-import { formatDate } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 
 // ─── 채널 표시 설정 ───────────────────────────────────────────────────────
 
@@ -30,11 +32,11 @@ const CHANNEL_META: Record<string, { label: string; color: string }> = {
   manual:       { label: '직접입력',      color: 'bg-orange-100 text-orange-800' },
 }
 
-function SourceBadge({ source }: { source: string }) {
-  const meta = CHANNEL_META[source] ?? { label: source, color: 'bg-gray-100 text-gray-700' }
+function SourceBadge({ source, label }: { source: string; label: string }) {
+  const color = CHANNEL_META[source]?.color ?? 'bg-gray-100 text-gray-700'
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${meta.color}`}>
-      {meta.label}
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${color}`}>
+      {label}
     </span>
   )
 }
@@ -43,91 +45,93 @@ function SourceBadge({ source }: { source: string }) {
 
 function ChannelCard({
   summary,
+  label,
   selected,
   onClick,
 }: {
   summary: ChannelSummary
+  label: string
   selected: boolean
   onClick: () => void
 }) {
-  const meta = CHANNEL_META[summary.source] ?? { label: summary.source, color: '' }
+  const meta = { label }
   const hasError = summary.errors_24h > 0
   const openRate = Number(summary.open_rate ?? 0)
+  const lastReceived = summary.last_received_at ? formatDate(summary.last_received_at) : null
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-lg border p-4 text-left transition-colors ${
-        selected ? 'border-primary bg-primary/5' : 'hover:bg-accent/40'
-      }`}
+      title={lastReceived ? `마지막 수신: ${lastReceived}${hasError ? ` · 24h 오류 ${summary.errors_24h}건` : ''}` : undefined}
+      className={cn(
+        'flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left transition-colors',
+        selected ? 'border-primary bg-primary/5' : 'hover:bg-accent/40',
+      )}
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="font-medium">{meta.label}</span>
-        {hasError && <span title="24h 오류 있음"><AlertCircle className="h-4 w-4 text-destructive" /></span>}
-      </div>
-      <div className="mt-2 grid grid-cols-3 gap-2 text-center text-xs">
-        <div>
-          <p className="text-lg font-bold">{summary.total}</p>
-          <p className="text-muted-foreground">전체</p>
-        </div>
-        <div>
-          <p className={`text-lg font-bold ${summary.open_count > 0 ? 'text-orange-600' : ''}`}>
-            {summary.open_count}
-          </p>
-          <p className="text-muted-foreground">미처리</p>
-        </div>
-        <div>
-          <p className={`text-lg font-bold ${openRate > 30 ? 'text-destructive' : ''}`}>
-            {openRate}%
-          </p>
-          <p className="text-muted-foreground">미처리율</p>
-        </div>
-      </div>
-      {summary.last_received_at && (
-        <p className="mt-2 text-xs text-muted-foreground">
-          마지막: {formatDate(summary.last_received_at)}
-        </p>
-      )}
-      {hasError && (
-        <p className="mt-1 text-xs text-destructive">
-          ⚠ 24h 오류 {summary.errors_24h}건
-        </p>
-      )}
+      <span className="flex min-w-0 items-center gap-1.5">
+        <span className="truncate text-sm font-medium">{meta.label}</span>
+        {hasError && (
+          <span title={`24h 오류 ${summary.errors_24h}건`}>
+            <AlertCircle className="h-3.5 w-3.5 shrink-0 text-destructive" />
+          </span>
+        )}
+      </span>
+      <span className="flex shrink-0 items-baseline gap-1 text-xs text-muted-foreground">
+        <span className={cn('text-base font-bold tabular-nums', summary.open_count > 0 ? 'text-orange-600' : 'text-foreground/40')}>
+          {summary.open_count}
+        </span>
+        <span>/ {summary.total}</span>
+        <span className={cn('ml-0.5', openRate > 30 && 'font-medium text-destructive')}>
+          {openRate}%
+        </span>
+      </span>
     </button>
   )
 }
 
 // ─── 문의 행 ──────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<InquiryStatus, { label: string; icon: typeof Clock }> = {
-  open:       { label: '미처리', icon: Clock },
-  answered:   { label: '답변됨', icon: CheckCircle2 },
-  assetized:  { label: '자산화', icon: Archive },
+const STATUS_CONFIG: Record<InquiryStatus, { label: string; icon: typeof Clock; cls: string }> = {
+  open:       { label: '미처리', icon: Clock,        cls: 'border-orange-300 bg-orange-50 text-orange-700' },
+  answered:   { label: '답변됨', icon: CheckCircle2, cls: 'border-blue-200 bg-blue-50 text-blue-700' },
+  assetized:  { label: '자산화', icon: Archive,      cls: 'border-green-200 bg-green-50 text-green-700' },
 }
 
 function InquiryRow({
   inquiry,
+  clientName,
+  sourceLabel,
   onStatusChange,
 }: {
   inquiry: Inquiry
+  clientName: string | null
+  sourceLabel: string
   onStatusChange: (id: string, status: InquiryStatus) => void
 }) {
-  const sc = STATUS_CONFIG[inquiry.status]
-  const Icon = sc.icon
+  const isOpen = inquiry.status === 'open'
 
   return (
-    <tr className="border-b last:border-0 hover:bg-accent/30">
-      <td className="px-3 py-2 align-top">
-        <SourceBadge source={inquiry.source} />
+    <tr className={cn('border-b last:border-0 transition-colors hover:bg-accent/30', isOpen && 'bg-orange-50/40')}>
+      <td className="px-3 py-2.5 align-top">
+        <SourceBadge source={inquiry.source} label={sourceLabel} />
       </td>
-      <td className="max-w-sm px-3 py-2 align-top">
+      <td className="max-w-sm px-3 py-2.5 align-top">
         <p className="line-clamp-2 text-sm">{inquiry.raw_text}</p>
         <p className="mt-0.5 text-xs text-muted-foreground">{formatDate(inquiry.created_at)}</p>
       </td>
-      <td className="px-3 py-2 align-middle">
+      <td className="px-3 py-2.5 align-middle">
+        {inquiry.predicted_category
+          ? <Badge variant="outline" className="text-xs">{inquiry.predicted_category}</Badge>
+          : <span className="text-xs text-muted-foreground/60">미분류</span>}
+      </td>
+      <td className="px-3 py-2.5 align-middle text-sm text-muted-foreground">
+        {clientName ?? '—'}
+      </td>
+      {/* 상태: 변경 Select 하나로 통합 (현재 상태 = Select 값) */}
+      <td className="px-3 py-2.5 align-middle">
         <Select
-          className="h-7 w-28 text-xs"
+          className={cn('h-8 w-24 text-xs font-medium', STATUS_CONFIG[inquiry.status].cls)}
           value={inquiry.status}
           onChange={(e) => onStatusChange(inquiry.id, e.target.value as InquiryStatus)}
         >
@@ -136,16 +140,7 @@ function InquiryRow({
           ))}
         </Select>
       </td>
-      <td className="px-3 py-2 align-middle">
-        <span className={`flex items-center gap-1 text-xs ${
-          inquiry.status === 'open' ? 'text-orange-600' :
-          inquiry.status === 'assetized' ? 'text-green-600' : 'text-muted-foreground'
-        }`}>
-          <Icon className="h-3 w-3" />
-          {sc.label}
-        </span>
-      </td>
-      <td className="px-3 py-2 align-middle">
+      <td className="px-3 py-2.5 align-middle">
         <Link
           to={`/process/${inquiry.id}`}
           className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium text-primary hover:bg-accent"
@@ -160,10 +155,19 @@ function InquiryRow({
 // ─── 메인 ─────────────────────────────────────────────────────────────────
 
 export function InboxPage() {
+  const [searchParams] = useSearchParams()
+  const initialStatus = (searchParams.get('status') as InquiryStatus | 'all') || 'open'
+  const initialCategory = searchParams.get('category')
+
   const [summaries, setSummaries] = useState<ChannelSummary[]>([])
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
   const [clients, setClients] = useState<Client[]>([])
-  const [filter, setFilter] = useState<InquiryFilter>({ status: 'open' })
+  const [categories, setCategories] = useState<string[]>([])
+  const [channels, setChannels] = useState<Channel[]>([])
+  const [filter, setFilter] = useState<InquiryFilter>({
+    status: initialStatus,
+    category: initialCategory || undefined,
+  })
   const [selectedSource, setSelectedSource] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -190,6 +194,8 @@ export function InboxPage() {
 
   useEffect(() => {
     listClients().then(setClients).catch(() => {})
+    listCategories().then((cats) => setCategories(cats.map((c) => c.name))).catch(() => {})
+    listChannels().then(setChannels).catch(() => {})
     loadSummaries()
     loadInquiries(filter)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -217,6 +223,10 @@ export function InboxPage() {
 
   const totalOpen = summaries.reduce((s, c) => s + c.open_count, 0)
   const totalErrors = summaries.reduce((s, c) => s + c.errors_24h, 0)
+  const clientName = (id: string | null) =>
+    id ? clients.find((c) => c.id === id)?.name ?? null : null
+  const labelOf = (source: string) =>
+    channels.find((c) => c.key === source)?.label ?? CHANNEL_META[source]?.label ?? source
 
   return (
     <div className="space-y-6">
@@ -256,17 +266,24 @@ export function InboxPage() {
         </div>
       )}
 
-      {/* 채널 카드 그리드 */}
+      {/* 채널별 현황 (컴팩트) */}
       {summaries.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {summaries.map((s) => (
-            <ChannelCard
-              key={s.source}
-              summary={s}
-              selected={selectedSource === s.source}
-              onClick={() => handleSourceClick(s.source)}
-            />
-          ))}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between px-0.5">
+            <p className="text-xs font-medium text-muted-foreground">채널별 현황</p>
+            <p className="text-[11px] text-muted-foreground/70">미처리 / 전체 · 미처리율</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {summaries.map((s) => (
+              <ChannelCard
+                key={s.source}
+                summary={s}
+                label={labelOf(s.source)}
+                selected={selectedSource === s.source}
+                onClick={() => handleSourceClick(s.source)}
+              />
+            ))}
+          </div>
         </div>
       )}
 
@@ -292,9 +309,19 @@ export function InboxPage() {
           {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </Select>
 
+        <Select
+          className="w-40"
+          value={filter.category ?? ''}
+          onChange={(e) => applyFilter({ category: e.target.value || null })}
+        >
+          <option value="">전체 카테고리</option>
+          {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+          <option value="미분류">미분류</option>
+        </Select>
+
         {selectedSource && (
           <Badge variant="secondary" className="gap-1">
-            {CHANNEL_META[selectedSource]?.label ?? selectedSource}
+            {labelOf(selectedSource)}
             <button
               type="button"
               className="ml-1 opacity-60 hover:opacity-100"
@@ -323,8 +350,9 @@ export function InboxPage() {
               <tr>
                 <th className="px-3 py-2 text-left w-24">채널</th>
                 <th className="px-3 py-2 text-left">문의 내용</th>
-                <th className="px-3 py-2 text-left w-32">상태 변경</th>
-                <th className="px-3 py-2 text-left w-20">현재</th>
+                <th className="px-3 py-2 text-left w-32">카테고리</th>
+                <th className="px-3 py-2 text-left w-28">클라이언트</th>
+                <th className="px-3 py-2 text-left w-24">상태</th>
                 <th className="px-3 py-2 text-left w-20">처리</th>
               </tr>
             </thead>
@@ -333,6 +361,8 @@ export function InboxPage() {
                 <InquiryRow
                   key={inq.id}
                   inquiry={inq}
+                  clientName={clientName(inq.client_id)}
+                  sourceLabel={labelOf(inq.source)}
                   onStatusChange={handleStatusChange}
                 />
               ))}
