@@ -16,14 +16,14 @@
 
 ## 태스크
 
-- [ ] 공통 정규화 Edge Function `intake-normalize` + `source/source_ref` dedup — FR-8 공통
-- [ ] **Google Forms**: Apps Script 가이드 + `intake-google-form` 웹훅 — FR-8.2 *(우선순위 1: 가장 빠름)*
-- [ ] **Gmail**: OAuth2 + Pub/Sub Watch + `intake-email` + 7일 갱신 — FR-8.3
-- [ ] **Slack**: App 생성 + Events API + `intake-slack` + 스레드 연결 — FR-8.4
-- [ ] **카카오 채널**: 비즈 채널 웹훅 `intake-kakao` (채널 개설 전제) — FR-8.5
-- [ ] **SMS**: Solapi 수신 웹훅 `intake-sms` (수신번호 개설 전제) — FR-8.6
-- [ ] 전화·기타 "빠른 입력" 단축 UI (3필드) — FR-8.7
-- [ ] 수집 현황 대시보드 (채널별 인입량·미처리율·오류 알림) — FR-8.8
+- [x] 공통 정규화 Edge Function `intake-normalize` + `source/source_ref` dedup — FR-8 공통
+- [x] **Google Forms**: Apps Script 가이드 + `intake-google-form` 웹훅 — FR-8.2 *(우선순위 1: 가장 빠름)*
+- [x] **Gmail**: OAuth2 + Pub/Sub Watch + `intake-email` + 7일 갱신 — FR-8.3
+- [x] **Slack**: App 생성 + Events API + `intake-slack` + 스레드 연결 — FR-8.4
+- [x] **카카오 채널**: 비즈 채널 웹훅 `intake-kakao` (채널 개설 전제) — FR-8.5
+- [x] **SMS**: Solapi 수신 웹훅 `intake-sms` (수신번호 개설 전제) — FR-8.6
+- [x] 전화·기타 "빠른 입력" 단축 UI (3필드) — FR-8.7
+- [x] 수집 현황 대시보드 (채널별 인입량·미처리율·오류 알림) — FR-8.8
 
 ## 산출물
 

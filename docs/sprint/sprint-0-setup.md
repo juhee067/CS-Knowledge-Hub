@@ -16,14 +16,14 @@
 
 ## 태스크
 
-- [ ] Supabase 프로젝트 생성 (개발/프로덕션 분리), `pgvector` 확장 활성화
-- [ ] React 19 + TypeScript + Vite + Tailwind + shadcn/ui 스캐폴딩
-- [ ] `@supabase/supabase-js` 연동, 환경변수(`.env`) 규약 정의
-- [ ] `supabase/migrations/`에 PRD 8장 스키마 초기 마이그레이션 작성
-- [ ] Supabase Auth 연동 + `users` 프로필 테이블 트리거(`auth.users` → `public.users`)
-- [ ] RLS 기본 정책 골격 (`viewer/editor/lead`) 및 헬퍼 함수
-- [ ] Vercel 배포 파이프라인 + GitHub Actions(린트·타입체크) CI
-- [ ] 프로젝트 구조 컨벤션 문서화 (폴더 구조, 네이밍)
+- [x] Supabase 프로젝트 생성 (개발/프로덕션 분리), `pgvector` 확장 활성화
+- [x] React 19 + TypeScript + Vite + Tailwind + shadcn/ui 스캐폴딩
+- [x] `@supabase/supabase-js` 연동, 환경변수(`.env`) 규약 정의
+- [x] `supabase/migrations/`에 PRD 8장 스키마 초기 마이그레이션 작성
+- [x] Supabase Auth 연동 + `users` 프로필 테이블 트리거(`auth.users` → `public.users`)
+- [x] RLS 기본 정책 골격 (`viewer/editor/lead`) 및 헬퍼 함수
+- [x] Vercel 배포 파이프라인 + GitHub Actions(린트·타입체크) CI
+- [x] 프로젝트 구조 컨벤션 문서화 (폴더 구조, 네이밍)
 
 ## 산출물
 

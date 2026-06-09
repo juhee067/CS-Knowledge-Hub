@@ -16,15 +16,15 @@
 
 ## 태스크
 
-- [ ] FAQ 임베딩 생성 Edge Function (`embed-faq`) + 저장/수정 후 자동 호출
-- [ ] `search_knowledge` RPC: Postgres FTS + pgvector 하이브리드 — FR-1.2
-- [ ] 단일 검색창 UI (FAQ + 클라이언트 카드 동시) — FR-1.1
-- [ ] 클라이언트·카테고리·상태 필터 — FR-1.3
-- [ ] CSV/Excel 업로드 UI + 컬럼 매핑 + 오류 행 처리 — FR-8.1.1
-- [ ] `intake-bulk` Edge Function (일괄 적재) — FR-8.1.1
-- [ ] 위키(Notion/Confluence) URL 임포트 → FAQ 초안 — FR-8.1.2
-- [ ] 수동 복붙 단축 입력 폼 — FR-8.1.3
-- [ ] 초기 시드: FAQ 50건 + 클라이언트 카드 5곳 + 과거 문의 100건 이관
+- [x] FAQ 임베딩 생성 Edge Function (`embed-faq`) + 저장/수정 후 자동 호출
+- [x] `search_knowledge` RPC: Postgres FTS + pgvector 하이브리드 — FR-1.2
+- [x] 단일 검색창 UI (FAQ + 클라이언트 카드 동시) — FR-1.1
+- [x] 클라이언트·카테고리·상태 필터 — FR-1.3
+- [x] CSV/Excel 업로드 UI + 컬럼 매핑 + 오류 행 처리 — FR-8.1.1
+- [x] `intake-bulk` Edge Function (일괄 적재) — FR-8.1.1
+- [x] 위키(Notion/Confluence) URL 임포트 → FAQ 초안 — FR-8.1.2
+- [x] 수동 복붙 단축 입력 폼 — FR-8.1.3
+- [x] 초기 시드: FAQ 50건 + 클라이언트 카드 5곳 + 과거 문의 100건 이관
 
 ## 산출물
 
