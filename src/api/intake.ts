@@ -40,15 +40,29 @@ export async function importFromWikiUrl(url: string): Promise<WikiImportResult> 
 export interface PasteImportInput {
   raw_text: string
   client_slug?: string
+  category?: string | null
 }
 
 export async function intakePaste(input: PasteImportInput): Promise<{ id: string }> {
+  // client_slug → client_id 변환 (선택)
+  let clientId: string | null = null
+  if (input.client_slug) {
+    const { data: client } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('slug', input.client_slug)
+      .maybeSingle()
+    clientId = (client as { id: string } | null)?.id ?? null
+  }
+
   const { data, error } = await supabase
     .from('inquiries')
     .insert({
       raw_text: input.raw_text,
       source: 'manual',
       status: 'open',
+      client_id: clientId,
+      predicted_category: input.category ?? null,
     } as never)
     .select('id')
     .single()
