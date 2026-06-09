@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { searchKnowledge, type SearchResult, type SearchFilter } from '@/api/search'
 import { listClients } from '@/api/clients'
+import { listCategories } from '@/api/categories'
 import type { Client, FaqStatus } from '@/types'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -11,10 +12,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/StatusBadge'
 import { formatDate } from '@/lib/utils'
-
-const CATEGORIES = [
-  '계정/인증', '결제', '배송', '반품/환불', '상품', '기술지원', '기타',
-]
 
 function ResultCard({ result }: { result: SearchResult }) {
   return (
@@ -51,6 +48,7 @@ export function SearchPage() {
   const [category, setCategory] = useState('')
   const [clientId, setClientId] = useState<string>('')
   const [clients, setClients] = useState<Client[]>([])
+  const [categories, setCategories] = useState<string[]>([])
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
@@ -59,6 +57,7 @@ export function SearchPage() {
 
   useEffect(() => {
     listClients().then(setClients).catch(() => {})
+    listCategories().then((cats) => setCategories(cats.map((c) => c.name))).catch(() => {})
     inputRef.current?.focus()
   }, [])
 
@@ -123,7 +122,7 @@ export function SearchPage() {
             onChange={(e) => setCategory(e.target.value)}
           >
             <option value="">전체 카테고리</option>
-            {CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
           </Select>

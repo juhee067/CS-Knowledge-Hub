@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { createFaq, getFaq, updateFaq, type FaqInput } from '@/api/faqs'
+import { listCategories } from '@/api/categories'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Select } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export function FaqEditPage() {
@@ -19,9 +21,14 @@ export function FaqEditPage() {
     tags: [],
   })
   const [tagsText, setTagsText] = useState('')
+  const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(editing)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    listCategories().then((cats) => setCategories(cats.map((c) => c.name))).catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!id) return
@@ -94,12 +101,16 @@ export function FaqEditPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="category">카테고리</Label>
-              <Input
+              <Select
                 id="category"
                 value={form.category ?? ''}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
-                placeholder="예: 계정"
-              />
+              >
+                <option value="">미분류</option>
+                {categories.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </Select>
             </div>
             <div>
               <Label htmlFor="tags">태그 (쉼표 구분)</Label>

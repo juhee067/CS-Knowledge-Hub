@@ -12,6 +12,7 @@ import { InboxPage } from '@/pages/InboxPage'
 import { QuickInputPage } from '@/pages/QuickInputPage'
 import { ProcessInquiryPage } from '@/pages/ProcessInquiryPage'
 import { AssetizeQueuePage } from '@/pages/AssetizeQueuePage'
+import { SettingsPage } from '@/pages/SettingsPage'
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
               <Route path="/assetize" element={<AssetizeQueuePage />} />
               <Route path="/quick" element={<QuickInputPage />} />
               <Route path="/import" element={<ImportPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/search" replace />} />
