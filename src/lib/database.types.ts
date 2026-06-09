@@ -188,6 +188,22 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['inquiries']['Insert']>
         Relationships: []
       }
+      faq_categories: {
+        Row: {
+          id: number
+          name: string
+          sort_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          name: string
+          sort_order?: number
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['faq_categories']['Insert']>
+        Relationships: []
+      }
       classification_feedback: {
         Row: {
           id: string

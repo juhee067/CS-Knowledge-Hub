@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { BookText, LogOut, Search, Upload, Inbox, Zap, Layers } from 'lucide-react'
+import { BookText, LogOut, Search, Upload, Inbox, Zap, Layers, Settings } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -12,6 +12,7 @@ const navItems = [
   { to: '/assetize', label: '자산화큐', icon: Layers },
   { to: '/quick',    label: '빠른입력', icon: Zap },
   { to: '/import',   label: '이관',     icon: Upload },
+  { to: '/settings', label: '설정',     icon: Settings },
 ]
 
 export function Layout() {

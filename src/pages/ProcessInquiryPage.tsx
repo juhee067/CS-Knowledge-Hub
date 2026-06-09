@@ -17,6 +17,7 @@ import {
 } from '@/api/classify'
 import { getInquiry, saveClassification, type Inquiry } from '@/api/inquiries'
 import { listClients } from '@/api/clients'
+import { listCategories } from '@/api/categories'
 import type { Client } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -25,10 +26,6 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { formatDate } from '@/lib/utils'
-
-const CATEGORIES = [
-  '계정/인증', '결제', '배송', '반품/환불', '상품', '기술지원', '기타',
-]
 
 const SOURCE_LABEL: Record<string, string> = {
   google_form: 'Google Forms', email: 'Gmail', slack: 'Slack', kakao: '카카오',
@@ -99,6 +96,7 @@ export function ProcessInquiryPage() {
 
   const [inquiry, setInquiry] = useState<Inquiry | null>(null)
   const [clients, setClients] = useState<Client[]>([])
+  const [categories, setCategories] = useState<string[]>([])
   const [classify, setClassify] = useState<ClassifyResult | null>(null)
   const [classifying, setClassifying] = useState(false)
 
@@ -119,6 +117,7 @@ export function ProcessInquiryPage() {
   useEffect(() => {
     let alive = true
     listClients().then((c) => alive && setClients(c)).catch(() => {})
+    listCategories().then((cats) => alive && setCategories(cats.map((c) => c.name))).catch(() => {})
 
     async function run() {
       try {
@@ -308,7 +307,7 @@ export function ProcessInquiryPage() {
                 <Label className="text-xs">추정 카테고리</Label>
                 <Select value={category} onChange={(e) => setCategory(e.target.value)} className="h-9">
                   <option value="">미분류</option>
-                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  {categories.map((c) => <option key={c} value={c}>{c}</option>)}
                 </Select>
                 {classify && classify.prediction_score > 0 && (
                   <div className="pt-1">
