@@ -1,11 +1,12 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { BookText, LogOut, Search, Upload, Inbox, Zap, Layers, Settings } from 'lucide-react'
+import { BookText, LogOut, Search, Upload, Inbox, Zap, Layers, Settings, Sparkles } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 const navItems = [
+  { to: '/ask',      label: 'Ask Hub', icon: Sparkles },
   { to: '/search',   label: '검색',    icon: Search },
   { to: '/faqs',     label: 'FAQ',      icon: BookText },
   { to: '/inbox',    label: '수집현황', icon: Inbox },

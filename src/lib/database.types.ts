@@ -11,6 +11,16 @@ export type AuditAction =
   | 'delete'
   | 'status_change'
 
+export type ChatFeedback = 'helpful' | 'insufficient' | 'wrong'
+
+/** chat_messages.citations 항목 — 답변 근거가 된 FAQ */
+export interface Citation {
+  type: 'faq'
+  id: string
+  title: string
+  score: number
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -186,6 +196,66 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['inquiries']['Insert']>
+        Relationships: []
+      }
+      chat_sessions: {
+        Row: {
+          id: string
+          user_id: string | null
+          client_id: string | null
+          title: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          client_id?: string | null
+          title?: string | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['chat_sessions']['Insert']>
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          id: string
+          session_id: string
+          role: 'user' | 'assistant'
+          content: string
+          citations: Citation[] | null
+          feedback: ChatFeedback | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          role: 'user' | 'assistant'
+          content: string
+          citations?: Citation[] | null
+          feedback?: ChatFeedback | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['chat_messages']['Insert']>
+        Relationships: []
+      }
+      retrievals: {
+        Row: {
+          id: string
+          message_id: string
+          query_text: string
+          results: Record<string, unknown>[] | null
+          grounded: boolean | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          query_text: string
+          results?: Record<string, unknown>[] | null
+          grounded?: boolean | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['retrievals']['Insert']>
         Relationships: []
       }
       faq_categories: {

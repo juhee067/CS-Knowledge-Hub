@@ -13,6 +13,7 @@ import { QuickInputPage } from '@/pages/QuickInputPage'
 import { ProcessInquiryPage } from '@/pages/ProcessInquiryPage'
 import { AssetizeQueuePage } from '@/pages/AssetizeQueuePage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { AskHubPage } from '@/pages/AskHubPage'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route index element={<Navigate to="/search" replace />} />
+              <Route path="/ask" element={<AskHubPage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/faqs" element={<FaqListPage />} />
               <Route path="/faqs/new" element={<FaqEditPage />} />
