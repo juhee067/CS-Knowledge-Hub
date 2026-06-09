@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Tags, Radio, Building2 } from 'lucide-react'
 import {
   listCategories, createCategory, deleteCategory, type FaqCategory,
 } from '@/api/categories'
@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 // ─── 섹션 래퍼 ──────────────────────────────────────────────────────────────
 
@@ -66,7 +67,19 @@ function CategorySection({ canEdit, isLead }: { canEdit: boolean; isLead: boolea
 
   return (
     <Section title="FAQ 카테고리" desc="FAQ·문의 분류에 사용하는 카테고리입니다.">
-      <ul className="divide-y rounded-lg border">
+      {canEdit ? (
+        <form onSubmit={add} className="flex gap-2 rounded-lg border bg-muted/30 p-3">
+          <Input ref={ref} value={input} onChange={(e) => setInput(e.target.value)}
+            placeholder="새 카테고리 이름" className="flex-1" />
+          <Button type="submit" disabled={busy || !input.trim()}>
+            <Plus className="mr-1.5 h-4 w-4" /> 추가
+          </Button>
+        </form>
+      ) : (
+        <Badge variant="secondary" className="text-xs">viewer는 수정할 수 없습니다.</Badge>
+      )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      <ul className="max-h-[50vh] divide-y overflow-y-auto rounded-lg border">
         {items.length === 0 && <li className="px-4 py-3 text-sm text-muted-foreground">카테고리가 없습니다.</li>}
         {items.map((c) => (
           <li key={c.id} className="flex items-center justify-between px-4 py-2.5">
@@ -80,18 +93,6 @@ function CategorySection({ canEdit, isLead }: { canEdit: boolean; isLead: boolea
           </li>
         ))}
       </ul>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      {canEdit ? (
-        <form onSubmit={add} className="flex gap-2">
-          <Input ref={ref} value={input} onChange={(e) => setInput(e.target.value)}
-            placeholder="새 카테고리 이름" className="flex-1" />
-          <Button type="submit" disabled={busy || !input.trim()}>
-            <Plus className="mr-1.5 h-4 w-4" /> 추가
-          </Button>
-        </form>
-      ) : (
-        <Badge variant="secondary" className="text-xs">viewer는 수정할 수 없습니다.</Badge>
-      )}
     </Section>
   )
 }
@@ -130,7 +131,21 @@ function ChannelSection({ canEdit, isLead }: { canEdit: boolean; isLead: boolean
 
   return (
     <Section title="수집 채널" desc="문의가 들어오는 채널입니다. 빠른 입력·문의함에서 사용됩니다.">
-      <ul className="divide-y rounded-lg border">
+      {canEdit ? (
+        <form onSubmit={add} className="flex flex-wrap gap-2 rounded-lg border bg-muted/30 p-3">
+          <Input value={label} onChange={(e) => setLabel(e.target.value)}
+            placeholder="표시 이름 (예: 인스타그램)" className="min-w-36 flex-1" />
+          <Input value={key} onChange={(e) => setKey(e.target.value)}
+            placeholder="식별자 (예: instagram)" className="min-w-36 flex-1" />
+          <Button type="submit" disabled={busy || !key.trim() || !label.trim()}>
+            <Plus className="mr-1.5 h-4 w-4" /> 추가
+          </Button>
+        </form>
+      ) : (
+        <Badge variant="secondary" className="text-xs">viewer는 수정할 수 없습니다.</Badge>
+      )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      <ul className="max-h-[50vh] divide-y overflow-y-auto rounded-lg border">
         {items.length === 0 && <li className="px-4 py-3 text-sm text-muted-foreground">채널이 없습니다.</li>}
         {items.map((c) => (
           <li key={c.id} className="flex items-center justify-between px-4 py-2.5">
@@ -147,20 +162,6 @@ function ChannelSection({ canEdit, isLead }: { canEdit: boolean; isLead: boolean
           </li>
         ))}
       </ul>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      {canEdit ? (
-        <form onSubmit={add} className="flex flex-wrap gap-2">
-          <Input value={label} onChange={(e) => setLabel(e.target.value)}
-            placeholder="표시 이름 (예: 인스타그램)" className="min-w-36 flex-1" />
-          <Input value={key} onChange={(e) => setKey(e.target.value)}
-            placeholder="식별자 (예: instagram)" className="min-w-36 flex-1" />
-          <Button type="submit" disabled={busy || !key.trim() || !label.trim()}>
-            <Plus className="mr-1.5 h-4 w-4" /> 추가
-          </Button>
-        </form>
-      ) : (
-        <Badge variant="secondary" className="text-xs">viewer는 수정할 수 없습니다.</Badge>
-      )}
     </Section>
   )
 }
@@ -194,21 +195,8 @@ function ClientSection({ canEdit }: { canEdit: boolean }) {
 
   return (
     <Section title="클라이언트" desc="문의를 분류·연결할 고객사입니다.">
-      <ul className="divide-y rounded-lg border">
-        {items.length === 0 && <li className="px-4 py-3 text-sm text-muted-foreground">클라이언트가 없습니다.</li>}
-        {items.map((c) => (
-          <li key={c.id} className="px-4 py-2.5">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{c.name}</span>
-              <code className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{c.slug}</code>
-            </div>
-            {c.description && <p className="mt-0.5 text-xs text-muted-foreground">{c.description}</p>}
-          </li>
-        ))}
-      </ul>
-      {error && <p className="text-sm text-destructive">{error}</p>}
       {canEdit ? (
-        <form onSubmit={add} className="space-y-2">
+        <form onSubmit={add} className="space-y-2 rounded-lg border bg-muted/30 p-3">
           <div className="flex flex-wrap gap-2">
             <Input value={name} onChange={(e) => setName(e.target.value)}
               placeholder="고객사 이름 (예: 한국대학교)" className="min-w-40 flex-1" />
@@ -226,17 +214,39 @@ function ClientSection({ canEdit }: { canEdit: boolean }) {
       ) : (
         <Badge variant="secondary" className="text-xs">viewer는 수정할 수 없습니다.</Badge>
       )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      <ul className="max-h-[50vh] divide-y overflow-y-auto rounded-lg border">
+        {items.length === 0 && <li className="px-4 py-3 text-sm text-muted-foreground">클라이언트가 없습니다.</li>}
+        {items.map((c) => (
+          <li key={c.id} className="px-4 py-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{c.name}</span>
+              <code className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{c.slug}</code>
+            </div>
+            {c.description && <p className="mt-0.5 text-xs text-muted-foreground">{c.description}</p>}
+          </li>
+        ))}
+      </ul>
     </Section>
   )
 }
 
 // ─── 페이지 ─────────────────────────────────────────────────────────────────
 
+const TABS = [
+  { id: 'categories', label: '카테고리', icon: Tags },
+  { id: 'channels',   label: '수집 채널', icon: Radio },
+  { id: 'clients',    label: '클라이언트', icon: Building2 },
+] as const
+
+type TabId = (typeof TABS)[number]['id']
+
 export function SettingsPage() {
   const { canEdit, isLead } = useAuth()
+  const [tab, setTab] = useState<TabId>('categories')
 
   return (
-    <div className="mx-auto max-w-2xl space-y-10">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">설정</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -244,9 +254,34 @@ export function SettingsPage() {
         </p>
       </div>
 
-      <CategorySection canEdit={canEdit} isLead={isLead} />
-      <ChannelSection canEdit={canEdit} isLead={isLead} />
-      <ClientSection canEdit={canEdit} />
+      <div className="flex flex-col gap-6 md:flex-row">
+        {/* 좌측 탭 네비 */}
+        <nav className="flex shrink-0 gap-1 overflow-x-auto md:w-48 md:flex-col md:overflow-visible">
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setTab(id)}
+              className={cn(
+                'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap',
+                tab === id
+                  ? 'bg-secondary text-secondary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              {label}
+            </button>
+          ))}
+        </nav>
+
+        {/* 우측 콘텐츠 */}
+        <div className="min-w-0 flex-1 md:max-w-2xl">
+          {tab === 'categories' && <CategorySection canEdit={canEdit} isLead={isLead} />}
+          {tab === 'channels' && <ChannelSection canEdit={canEdit} isLead={isLead} />}
+          {tab === 'clients' && <ClientSection canEdit={canEdit} />}
+        </div>
+      </div>
     </div>
   )
 }
