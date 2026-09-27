@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { createFaq, getFaq, updateFaq, type FaqInput } from '@/api/faqs'
 import { listCategories } from '@/api/categories'
+import { listClients } from '@/api/clients'
+import type { Client } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -18,16 +20,19 @@ export function FaqEditPage() {
     question: '',
     answer: '',
     category: '',
+    client_id: null,
     tags: [],
   })
   const [tagsText, setTagsText] = useState('')
   const [categories, setCategories] = useState<string[]>([])
+  const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(editing)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     listCategories().then((cats) => setCategories(cats.map((c) => c.name))).catch(() => {})
+    listClients().then(setClients).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -39,6 +44,7 @@ export function FaqEditPage() {
             question: faq.question,
             answer: faq.answer,
             category: faq.category ?? '',
+            client_id: faq.client_id ?? null,
             tags: faq.tags ?? [],
           })
           setTagsText((faq.tags ?? []).join(', '))
@@ -113,14 +119,27 @@ export function FaqEditPage() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="tags">태그 (쉼표 구분)</Label>
-              <Input
-                id="tags"
-                value={tagsText}
-                onChange={(e) => setTagsText(e.target.value)}
-                placeholder="예: 로그인, 비밀번호"
-              />
+              <Label htmlFor="client">클라이언트</Label>
+              <Select
+                id="client"
+                value={form.client_id ?? ''}
+                onChange={(e) => setForm({ ...form, client_id: e.target.value || null })}
+              >
+                <option value="">미지정</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </Select>
             </div>
+          </div>
+          <div>
+            <Label htmlFor="tags">태그 (쉼표 구분)</Label>
+            <Input
+              id="tags"
+              value={tagsText}
+              onChange={(e) => setTagsText(e.target.value)}
+              placeholder="예: 로그인, 비밀번호"
+            />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex gap-2">

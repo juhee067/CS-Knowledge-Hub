@@ -57,6 +57,7 @@ export interface FaqInput {
   question: string
   answer: string
   category: string | null
+  client_id: string | null
   tags: string[] | null
 }
 
@@ -98,6 +99,16 @@ export async function setFaqStatus(
   })
   if (error) throw error
   await logAudit('faq', id, 'status_change', { status })
+}
+
+/** 카테고리만 변경 (목록에서 인라인 지정용). null 이면 미분류로 해제. */
+export async function setFaqCategory(id: string, category: string | null): Promise<void> {
+  const { error } = await supabase
+    .from('faqs')
+    .update({ category } as never)
+    .eq('id', id)
+  if (error) throw error
+  await logAudit('faq', id, 'update', { category })
 }
 
 export async function softDeleteFaq(id: string): Promise<void> {

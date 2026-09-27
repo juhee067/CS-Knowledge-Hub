@@ -96,6 +96,7 @@ export interface Database {
           question: string
           answer: string
           category: string | null
+          client_id: string | null
           tags: string[] | null
           status: FaqStatus
           created_by: string | null
@@ -109,6 +110,7 @@ export interface Database {
           question: string
           answer: string
           category?: string | null
+          client_id?: string | null
           tags?: string[] | null
           status?: FaqStatus
           created_by?: string | null

@@ -1,9 +1,6 @@
 import { useRef, useState } from 'react'
 import { Upload, Link2, CheckCircle2, XCircle, Download, FileDown } from 'lucide-react'
-import { intakeBulk, type BulkRow, type BulkResult } from '@/api/intake'
-import { listClients } from '@/api/clients'
-import type { Client } from '@/types'
-import { useEffect } from 'react'
+import { intakeBulkFaq, type BulkFaqRow, type BulkFaqResult } from '@/api/intake'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -46,26 +43,29 @@ function parseCSV(text: string): string[][] {
 
 function downloadTemplate() {
   const lines = [
-    'raw_text,client_slug,source_ref',
-    '"비밀번호를 잊어버렸어요. 재설정 방법을 알려주세요",korea-univ,TICKET-1001',
-    '"환불 규정이 어떻게 되나요?",,TICKET-1002',
+    'question,answer,category,client',
+    '"비밀번호를 잊어버렸어요. 재설정 방법은요?","로그인 화면 하단 [비밀번호 찾기]를 클릭한 후 이메일 인증을 완료하면 재설정 링크를 받을 수 있습니다.",계정,korea-univ',
+    '"환불 규정이 어떻게 되나요?","구매 후 7일 이내, 미사용 시 전액 환불 가능합니다. 이후에는 부분 환불 정책이 적용됩니다.",결제/환불,',
+    '"수강 기간 연장이 가능한가요?","고객센터로 문의하시면 1회에 한해 30일 연장이 가능합니다.",수강,veluga',
   ]
   // BOM 추가 — Excel 한글 깨짐 방지
   const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url; a.download = 'import_template.csv'; a.click()
+  a.href = url; a.download = 'faq_import_template.csv'; a.click()
   URL.revokeObjectURL(url)
 }
 
 // ─── 오류 행 CSV 다운로드 ─────────────────────────────────────────────────
 
-function downloadErrorCSV(result: BulkResult) {
-  const lines = ['index,reason,raw_text']
+function downloadErrorCSV(result: BulkFaqResult) {
+  const lines = ['index,reason,question,answer,category']
   for (const e of result.errorRows) {
-    const raw = String(e.row.raw_text ?? '').replace(/"/g, '""')
+    const q = String(e.row.question ?? '').replace(/"/g, '""')
+    const a = String(e.row.answer ?? '').replace(/"/g, '""')
+    const c = String(e.row.category ?? '').replace(/"/g, '""')
     const reason = e.reason.replace(/"/g, '""')
-    lines.push(`${e.index},"${reason}","${raw}"`)
+    lines.push(`${e.index},"${reason}","${q}","${a}","${c}"`)
   }
   const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
@@ -76,17 +76,27 @@ function downloadErrorCSV(result: BulkResult) {
 
 // ─── CSV 탭 ───────────────────────────────────────────────────────────────
 
-function CsvTab({ clients }: { clients: Client[] }) {
+function CsvTab() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [headers, setHeaders] = useState<string[]>([])
   const [rows, setRows] = useState<string[][]>([])
-  const [mapping, setMapping] = useState<{
-    raw_text: string; client_slug: string; source_ref: string
-  }>({ raw_text: '', client_slug: '', source_ref: '' })
-  const [defaultClientSlug, setDefaultClientSlug] = useState('')
-  const [result, setResult] = useState<BulkResult | null>(null)
+  const [mapping, setMapping] = useState<{ question: string; answer: string; category: string; client: string }>({
+    question: '', answer: '', category: '', client: '',
+  })
+  const [result, setResult] = useState<BulkFaqResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  function autoMap(hdrs: string[]) {
+    // 헤더 이름이 일치하면 자동 매핑
+    const match = (names: string[]) => hdrs.find((h) => names.includes(h.toLowerCase())) ?? ''
+    return {
+      question: match(['question', '질문']),
+      answer: match(['answer', '답변', '답']),
+      category: match(['category', '카테고리', '분류']),
+      client: match(['client', '클라이언트', '고객사']),
+    }
+  }
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -96,9 +106,10 @@ function CsvTab({ clients }: { clients: Client[] }) {
       const text = ev.target?.result as string
       const parsed = parseCSV(text)
       if (parsed.length < 2) { setError('데이터 행이 없습니다'); return }
-      setHeaders(parsed[0])
+      const hdrs = parsed[0]
+      setHeaders(hdrs)
       setRows(parsed.slice(1))
-      setMapping({ raw_text: '', client_slug: '', source_ref: '' })
+      setMapping(autoMap(hdrs))
       setResult(null)
       setError(null)
     }
@@ -106,27 +117,30 @@ function CsvTab({ clients }: { clients: Client[] }) {
   }
 
   async function handleUpload() {
-    if (!mapping.raw_text) { setError('raw_text 컬럼을 선택하세요'); return }
+    if (!mapping.question) { setError('question 컬럼을 선택하세요'); return }
+    if (!mapping.answer) { setError('answer 컬럼을 선택하세요'); return }
     setLoading(true); setError(null); setResult(null)
     try {
-      const rawTextIdx = headers.indexOf(mapping.raw_text)
-      const slugIdx = mapping.client_slug ? headers.indexOf(mapping.client_slug) : -1
-      const refIdx = mapping.source_ref ? headers.indexOf(mapping.source_ref) : -1
-
-      const bulkRows: BulkRow[] = rows.map((r) => ({
-        raw_text: r[rawTextIdx] ?? '',
-        client_slug: (slugIdx >= 0 ? r[slugIdx] : '') || defaultClientSlug || undefined,
-        source: 'csv_import',
-        source_ref: refIdx >= 0 ? r[refIdx] || undefined : undefined,
+      const qIdx = headers.indexOf(mapping.question)
+      const aIdx = headers.indexOf(mapping.answer)
+      const cIdx = mapping.category ? headers.indexOf(mapping.category) : -1
+      const clientIdx = mapping.client ? headers.indexOf(mapping.client) : -1
+      const bulkRows: BulkFaqRow[] = rows.map((r) => ({
+        question: r[qIdx] ?? '',
+        answer: r[aIdx] ?? '',
+        category: cIdx >= 0 ? (r[cIdx] || undefined) : undefined,
+        client: clientIdx >= 0 ? (r[clientIdx] || undefined) : undefined,
       }))
-
-      setResult(await intakeBulk(bulkRows))
+      setResult(await intakeBulkFaq(bulkRows))
     } catch (e) {
       setError(e instanceof Error ? e.message : '업로드 실패')
     } finally {
       setLoading(false)
     }
   }
+
+  // result 가 있으면 이미 제출한 것 — 새 파일을 올려야 다시 활성화
+  const canUpload = !loading && !!mapping.question && !!mapping.answer && result === null
 
   return (
     <div className="space-y-6">
@@ -135,11 +149,12 @@ function CsvTab({ clients }: { clients: Client[] }) {
         <div className="space-y-1.5 text-sm">
           <p className="font-medium">CSV 구조</p>
           <ul className="space-y-0.5 text-xs text-muted-foreground">
-            <li>• <code className="rounded bg-muted px-1">raw_text</code> <span className="text-destructive">(필수)</span> — 문의 내용</li>
-            <li>• <code className="rounded bg-muted px-1">client_slug</code> (선택) — 고객사 식별자(설정의 slug와 일치 시 연결)</li>
-            <li>• <code className="rounded bg-muted px-1">source_ref</code> (선택) — 원본 식별자(중복 제거 키)</li>
+            <li>• <code className="rounded bg-muted px-1">question</code> <span className="text-destructive">(필수)</span> — 질문</li>
+            <li>• <code className="rounded bg-muted px-1">answer</code> <span className="text-destructive">(필수)</span> — 답변</li>
+            <li>• <code className="rounded bg-muted px-1">category</code> (선택) — 카테고리</li>
+            <li>• <code className="rounded bg-muted px-1">client</code> (선택) — 고객사 slug 또는 이름(일치 시 연결)</li>
           </ul>
-          <p className="text-xs text-muted-foreground">첫 행은 헤더, UTF-8 권장. 업로드 후 컬럼을 매핑합니다.</p>
+          <p className="text-xs text-muted-foreground">첫 행은 헤더, UTF-8 권장. 업로드된 Q&amp;A는 FAQ 초안으로 생성됩니다.</p>
         </div>
         <Button variant="secondary" size="sm" className="shrink-0" onClick={downloadTemplate}>
           <FileDown className="mr-1.5 h-4 w-4" /> 템플릿 다운로드
@@ -152,46 +167,44 @@ function CsvTab({ clients }: { clients: Client[] }) {
         onClick={() => fileRef.current?.click()}
       >
         <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">CSV 파일을 클릭하여 선택</p>
-        <p className="mt-1 text-xs text-muted-foreground">UTF-8 인코딩 권장</p>
+        <p className="text-sm text-muted-foreground">CSV / Excel 파일을 클릭하여 선택</p>
+        <p className="mt-1 text-xs text-muted-foreground">UTF-8 인코딩 권장 · .csv / .txt</p>
         <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden" onChange={handleFile} />
       </div>
 
       {/* 컬럼 매핑 */}
       {headers.length > 0 && (
         <div className="space-y-4">
-          <p className="text-sm font-medium">컬럼 매핑 ({rows.length}행 감지됨)</p>
-          <div className="grid grid-cols-3 gap-4">
+          <p className="text-sm font-medium">컬럼 매핑 <span className="text-muted-foreground font-normal">({rows.length}행 감지됨)</span></p>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div>
-              <Label>raw_text <span className="text-destructive">*</span></Label>
-              <Select value={mapping.raw_text} onChange={(e) => setMapping({ ...mapping, raw_text: e.target.value })}>
+              <Label>question <span className="text-destructive">*</span></Label>
+              <Select value={mapping.question} onChange={(e) => setMapping({ ...mapping, question: e.target.value })}>
                 <option value="">선택…</option>
                 {headers.map((h) => <option key={h} value={h}>{h}</option>)}
               </Select>
             </div>
             <div>
-              <Label>client_slug (선택)</Label>
-              <Select value={mapping.client_slug} onChange={(e) => setMapping({ ...mapping, client_slug: e.target.value })}>
+              <Label>answer <span className="text-destructive">*</span></Label>
+              <Select value={mapping.answer} onChange={(e) => setMapping({ ...mapping, answer: e.target.value })}>
                 <option value="">선택…</option>
                 {headers.map((h) => <option key={h} value={h}>{h}</option>)}
               </Select>
             </div>
             <div>
-              <Label>source_ref (선택)</Label>
-              <Select value={mapping.source_ref} onChange={(e) => setMapping({ ...mapping, source_ref: e.target.value })}>
+              <Label>category <span className="text-muted-foreground text-xs">(선택)</span></Label>
+              <Select value={mapping.category} onChange={(e) => setMapping({ ...mapping, category: e.target.value })}>
                 <option value="">선택…</option>
                 {headers.map((h) => <option key={h} value={h}>{h}</option>)}
               </Select>
             </div>
-          </div>
-
-          {/* 기본 클라이언트 */}
-          <div className="max-w-xs">
-            <Label>기본 클라이언트 (client_slug 컬럼 없을 때)</Label>
-            <Select value={defaultClientSlug} onChange={(e) => setDefaultClientSlug(e.target.value)}>
-              <option value="">없음</option>
-              {clients.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
-            </Select>
+            <div>
+              <Label>client <span className="text-muted-foreground text-xs">(선택)</span></Label>
+              <Select value={mapping.client} onChange={(e) => setMapping({ ...mapping, client: e.target.value })}>
+                <option value="">선택…</option>
+                {headers.map((h) => <option key={h} value={h}>{h}</option>)}
+              </Select>
+            </div>
           </div>
 
           {/* 미리보기 */}
@@ -219,8 +232,8 @@ function CsvTab({ clients }: { clients: Client[] }) {
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button onClick={handleUpload} disabled={loading || !mapping.raw_text}>
-            {loading ? '업로드 중…' : `${rows.length}행 일괄 적재`}
+          <Button onClick={() => void handleUpload()} disabled={!canUpload}>
+            {loading ? '업로드 중…' : `${rows.length}행 FAQ 초안 생성`}
           </Button>
         </div>
       )}
@@ -235,7 +248,7 @@ function CsvTab({ clients }: { clients: Client[] }) {
                 : <XCircle className="h-5 w-5 text-destructive" />}
               <div>
                 <p className="font-medium">
-                  {result.inserted}건 적재 완료 / 총 {result.total}건
+                  FAQ 초안 {result.inserted}건 생성 완료 / 총 {result.total}건
                 </p>
                 {result.errors > 0 && (
                   <p className="text-sm text-destructive">{result.errors}건 오류</p>
@@ -321,11 +334,6 @@ const TABS: { id: Tab; label: string; icon: typeof Upload }[] = [
 
 export function ImportPage() {
   const [tab, setTab] = useState<Tab>('csv')
-  const [clients, setClients] = useState<Client[]>([])
-
-  useEffect(() => {
-    listClients().then(setClients).catch(() => {})
-  }, [])
 
   return (
     <div className="space-y-6">
@@ -358,7 +366,7 @@ export function ImportPage() {
       {/* 탭 콘텐츠 */}
       <Card>
         <CardContent className="p-6">
-          {tab === 'csv' && <CsvTab clients={clients} />}
+          {tab === 'csv' && <CsvTab />}
           {tab === 'wiki' && <WikiTab />}
         </CardContent>
       </Card>

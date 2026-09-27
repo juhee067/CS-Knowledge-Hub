@@ -11,12 +11,13 @@ import {
   Inbox, Flame, BookText, Sparkles, Zap, Search, Upload,
   ArrowRight, Clock, ChevronRight,
 } from 'lucide-react'
-import { listInquiries, getChannelSummary, type Inquiry, type ChannelSummary } from '@/api/inquiries'
+import { listInquiries, getChannelSummary, deleteInquiry, type Inquiry, type ChannelSummary } from '@/api/inquiries'
 import { getAssetizeCandidates, type AssetizeCandidate } from '@/api/classify'
 import { listFaqs } from '@/api/faqs'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { useDeleteContextMenu } from '@/components/useDeleteContextMenu'
 import { formatDate } from '@/lib/utils'
 
 const CHANNEL_LABEL: Record<string, string> = {
@@ -71,6 +72,14 @@ export function DashboardPage() {
   const [candidates, setCandidates] = useState<AssetizeCandidate[]>([])
   const [faqCount, setFaqCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  // 우클릭 → 삭제 (공용 훅)
+  const { handleContextMenu, overlay } = useDeleteContextMenu<Inquiry>({
+    remove: (i) => deleteInquiry(i.id),
+    onDeleted: (i) => setOpenInquiries((prev) => prev.filter((x) => x.id !== i.id)),
+    getPreview: (i) => i.raw_text,
+    title: '문의 삭제',
+    message: '이 문의를 영구히 삭제할까요? 되돌릴 수 없습니다.',
+  })
 
   useEffect(() => {
     Promise.allSettled([
@@ -148,6 +157,7 @@ export function DashboardPage() {
                   key={inq.id}
                   type="button"
                   onClick={() => navigate(`/process/${inq.id}`)}
+                  onContextMenu={(e) => handleContextMenu(e, inq)}
                   className="flex w-full items-center gap-3 py-2.5 text-left transition-colors hover:bg-accent/30"
                 >
                   <div className="min-w-0 flex-1">
@@ -223,6 +233,8 @@ export function DashboardPage() {
           ))}
         </div>
       </section>
+
+      {overlay}
     </div>
   )
 }

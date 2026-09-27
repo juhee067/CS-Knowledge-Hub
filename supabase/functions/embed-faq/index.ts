@@ -10,7 +10,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const OPENAI_EMBED_URL = 'https://api.openai.com/v1/embeddings'
 const EMBED_MODEL = 'text-embedding-3-small'
-const BATCH_SIZE = 10
+const BATCH_SIZE = 50
 
 Deno.serve(async (req: Request) => {
   try {

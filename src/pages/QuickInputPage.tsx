@@ -63,9 +63,10 @@ export function QuickInputPage() {
     setError(null)
     try {
       const { id } = await intakePaste({
-        raw_text: `[${channel}] ${content.trim()}`,
+        raw_text: content.trim(),
         client_slug: clientSlug || undefined,
         category: category || null,
+        source: channel,
       })
       setHistory((prev) => [
         {

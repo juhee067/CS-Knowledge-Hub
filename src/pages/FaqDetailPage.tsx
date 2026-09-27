@@ -7,7 +7,8 @@ import {
   setFaqStatus,
   softDeleteFaq,
 } from '@/api/faqs'
-import type { Faq, FaqStatus, FaqVersion } from '@/types'
+import { getClient } from '@/api/clients'
+import type { Faq, FaqStatus, FaqVersion, Client } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -27,6 +28,7 @@ export function FaqDetailPage() {
   const navigate = useNavigate()
   const { canEdit, isLead } = useAuth()
   const [faq, setFaq] = useState<Faq | null>(null)
+  const [client, setClient] = useState<Client | null>(null)
   const [versions, setVersions] = useState<FaqVersion[]>([])
   const [showHistory, setShowHistory] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -37,6 +39,7 @@ export function FaqDetailPage() {
     const [f, v] = await Promise.all([getFaq(id), getFaqVersions(id)])
     setFaq(f)
     setVersions(v)
+    setClient(f?.client_id ? await getClient(f.client_id).catch(() => null) : null)
   }
 
   useEffect(() => {
@@ -77,9 +80,10 @@ export function FaqDetailPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <StatusBadge status={faq.status} />
               {faq.category && <Badge variant="outline">{faq.category}</Badge>}
+              {client && <Badge variant="secondary">{client.name}</Badge>}
             </div>
             {canEdit && (
               <div className="flex gap-2">

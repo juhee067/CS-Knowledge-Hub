@@ -9,13 +9,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import {
   ArrowLeft, Sparkles, Wand2, FileUp, GitMerge,
-  CheckCircle2, Clock, ChevronRight,
+  CheckCircle2, Clock, ChevronRight, Check,
 } from 'lucide-react'
 import {
   classifyInquiry, assetizeInquiry, recordClassificationFeedback,
   type ClassifyResult, type SimilarFaq,
 } from '@/api/classify'
-import { getInquiry, saveClassification, type Inquiry } from '@/api/inquiries'
+import { getInquiry, saveClassification, answerInquiry, type Inquiry } from '@/api/inquiries'
 import { listClients } from '@/api/clients'
 import { listCategories } from '@/api/categories'
 import type { Client } from '@/types'
@@ -120,15 +120,27 @@ export function ProcessInquiryPage() {
     listCategories().then((cats) => alive && setCategories(cats.map((c) => c.name))).catch(() => {})
 
     async function run() {
+      // 1) 문의 로딩 (실패 시에만 화면 차단)
+      let inq: Inquiry | null
       try {
-        const inq = await getInquiry(id)
-        if (!alive || !inq) { setError('문의를 찾을 수 없습니다.'); return }
-        setInquiry(inq)
-        setClientId(inq.client_id ?? '')
-        setQuestion(inq.raw_text.split('\n')[0].slice(0, 120))
-        setAnswer(inq.answer_text ?? '')
+        inq = await getInquiry(id)
+      } catch (e) {
+        if (alive) setError(e instanceof Error ? e.message : '문의를 불러오지 못했습니다.')
+        return
+      }
+      if (!alive) return
+      if (!inq) { setError('문의를 찾을 수 없습니다.'); return }
 
-        setClassifying(true)
+      setInquiry(inq)
+      setClientId(inq.client_id ?? '')
+      setQuestion(inq.raw_text.split('\n')[0].slice(0, 120))
+      setAnswer(inq.answer_text ?? '')
+      setCategory(inq.predicted_category ?? '')
+
+      // 2) 자동 분류 — 보조 기능. 실패(예: OpenAI 미설정·검색 오류)해도
+      //    답변 작성·자산화는 계속 가능하도록 화면을 막지 않는다.
+      setClassifying(true)
+      try {
         const result = await classifyInquiry({
           inquiryId: inq.id,
           text: inq.raw_text,
@@ -137,11 +149,9 @@ export function ProcessInquiryPage() {
         if (!alive) return
         setClassify(result)
         setCategory(inq.predicted_category ?? result.predicted_category ?? '')
-        // 분류 결과 영속화 (큐 반영)
         if (result.predicted_category) {
           void saveClassification(inq.id, result.predicted_category, result.prediction_score)
         }
-        // 병합 후보 자동 제안
         if (result.merge_candidate_id) {
           const cand = result.similar.find((s) => s.id === result.merge_candidate_id)
           if (cand) {
@@ -151,8 +161,8 @@ export function ProcessInquiryPage() {
             setAnswer(cand.answer)
           }
         }
-      } catch (e) {
-        if (alive) setError(e instanceof Error ? e.message : '분류 실패')
+      } catch {
+        // 자동 분류 생략 — 수동으로 답변/자산화 진행
       } finally {
         if (alive) setClassifying(false)
       }
@@ -220,6 +230,22 @@ export function ProcessInquiryPage() {
       setTimeout(() => navigate('/inbox'), 900)
     } catch (e) {
       setError(e instanceof Error ? e.message : '자산화 실패')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleAnswerOnly() {
+    if (!inquiry) return
+    if (!answer.trim()) { setError('답변 내용을 입력하세요.'); return }
+    setSaving(true)
+    setError(null)
+    try {
+      await answerInquiry(inquiry.id, answer.trim())
+      setDone(true)
+      setTimeout(() => navigate('/inbox'), 900)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '답변 저장 실패')
     } finally {
       setSaving(false)
     }
@@ -424,6 +450,24 @@ export function ProcessInquiryPage() {
           </Button>
           <p className="text-center text-[11px] text-muted-foreground">
             저장 시 문의가 <strong>자산화</strong> 상태로 전환됩니다.
+          </p>
+
+          <div className="flex items-center gap-2 pt-1">
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-[11px] text-muted-foreground">또는</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleAnswerOnly}
+            disabled={saving || done || !answer.trim()}
+          >
+            <Check className="mr-1.5 h-4 w-4" /> 답변만 완료 (자산화 없이)
+          </Button>
+          <p className="text-center text-[11px] text-muted-foreground">
+            FAQ로 만들지 않고 <strong>답변됨</strong> 상태로만 처리합니다.
           </p>
         </section>
       </div>

@@ -90,6 +90,32 @@ export async function updateInquiryStatus(id: string, status: InquiryStatus): Pr
   if (error) throw error
 }
 
+/**
+ * 답변만 완료 (자산화 없이) — status='answered' + 답변 기록.
+ * FAQ로 만들지 않고 고객 응대만 끝낸 경우.
+ */
+export async function answerInquiry(id: string, answerText: string): Promise<void> {
+  const { data: userData } = await supabase.auth.getUser()
+  const { error } = await supabase
+    .from('inquiries')
+    .update({
+      status: 'answered',
+      answer_text: answerText,
+      answered_by: userData.user?.id ?? null,
+    } as never)
+    .eq('id', id)
+  if (error) throw error
+}
+
+/** 문의 영구 삭제 — RLS상 lead 권한만 가능. */
+export async function deleteInquiry(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('inquiries')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
 export async function getInquiry(id: string): Promise<Inquiry | null> {
   const { data, error } = await supabase
     .from('inquiries')

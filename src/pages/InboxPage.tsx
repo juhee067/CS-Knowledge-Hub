@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { RefreshCw, AlertCircle, CheckCircle2, Clock, Archive, Sparkles } from 'lucide-react'
+import { RefreshCw, AlertCircle, CheckCircle2, Clock, Archive, Sparkles, BookText } from 'lucide-react'
 import {
   getChannelSummary,
   listInquiries,
-  updateInquiryStatus,
   type ChannelSummary,
   type Inquiry,
   type InquiryStatus,
@@ -17,6 +16,7 @@ import type { Client } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select } from '@/components/ui/select'
+import { useInquiryQuickActions } from '@/components/useInquiryQuickActions'
 import { cn, formatDate } from '@/lib/utils'
 
 // ─── 채널 표시 설정 ───────────────────────────────────────────────────────
@@ -102,17 +102,23 @@ function InquiryRow({
   inquiry,
   clientName,
   sourceLabel,
-  onStatusChange,
+  onContextMenu,
 }: {
   inquiry: Inquiry
   clientName: string | null
   sourceLabel: string
-  onStatusChange: (id: string, status: InquiryStatus) => void
+  onContextMenu: (e: MouseEvent, inquiry: Inquiry) => void
 }) {
   const isOpen = inquiry.status === 'open'
+  const sc = STATUS_CONFIG[inquiry.status]
+  const StatusIcon = sc.icon
+  const isAssetized = inquiry.status === 'assetized' && inquiry.linked_faq_id
 
   return (
-    <tr className={cn('border-b last:border-0 transition-colors hover:bg-accent/30', isOpen && 'bg-orange-50/40')}>
+    <tr
+      className={cn('border-b last:border-0 transition-colors hover:bg-accent/30', isOpen && 'bg-orange-50/40')}
+      onContextMenu={(e) => onContextMenu(e, inquiry)}
+    >
       <td className="px-3 py-2.5 align-top">
         <SourceBadge source={inquiry.source} label={sourceLabel} />
       </td>
@@ -128,25 +134,29 @@ function InquiryRow({
       <td className="px-3 py-2.5 align-middle text-sm text-muted-foreground">
         {clientName ?? '—'}
       </td>
-      {/* 상태: 변경 Select 하나로 통합 (현재 상태 = Select 값) */}
+      {/* 상태: 읽기 전용 (실제 작업으로만 전이) */}
       <td className="px-3 py-2.5 align-middle">
-        <Select
-          className={cn('h-8 w-24 text-xs font-medium', STATUS_CONFIG[inquiry.status].cls)}
-          value={inquiry.status}
-          onChange={(e) => onStatusChange(inquiry.id, e.target.value as InquiryStatus)}
-        >
-          {Object.entries(STATUS_CONFIG).map(([v, { label }]) => (
-            <option key={v} value={v}>{label}</option>
-          ))}
-        </Select>
+        <span className={cn('inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium', sc.cls)}>
+          <StatusIcon className="h-3 w-3" /> {sc.label}
+        </span>
       </td>
+      {/* 액션: 자산화 완료는 FAQ 보기, 그 외는 처리 */}
       <td className="px-3 py-2.5 align-middle">
-        <Link
-          to={`/process/${inquiry.id}`}
-          className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium text-primary hover:bg-accent"
-        >
-          <Sparkles className="h-3 w-3" /> 처리
-        </Link>
+        {isAssetized ? (
+          <Link
+            to={`/faqs/${inquiry.linked_faq_id}`}
+            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <BookText className="h-3 w-3" /> FAQ 보기
+          </Link>
+        ) : (
+          <Link
+            to={`/process/${inquiry.id}`}
+            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium text-primary hover:bg-accent"
+          >
+            <Sparkles className="h-3 w-3" /> 처리
+          </Link>
+        )}
       </td>
     </tr>
   )
@@ -171,6 +181,15 @@ export function InboxPage() {
   const [selectedSource, setSelectedSource] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // 우클릭 → 간편 자산화 / 삭제 (수집현황 전용 훅)
+  const { handleContextMenu, overlay } = useInquiryQuickActions({
+    categories,
+    onAssetized: (id, faqId) =>
+      setInquiries((prev) =>
+        prev.map((i) => (i.id === id ? { ...i, status: 'assetized', linked_faq_id: faqId } : i)),
+      ),
+    onDeleted: (id) => setInquiries((prev) => prev.filter((i) => i.id !== id)),
+  })
 
   async function loadSummaries() {
     try {
@@ -211,14 +230,6 @@ export function InboxPage() {
     const next = selectedSource === source ? '' : source
     setSelectedSource(next)
     applyFilter({ source: next || undefined })
-  }
-
-  async function handleStatusChange(id: string, status: InquiryStatus) {
-    await updateInquiryStatus(id, status)
-    setInquiries((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, status } : i))
-    )
-    void loadSummaries()
   }
 
   const totalOpen = summaries.reduce((s, c) => s + c.open_count, 0)
@@ -363,13 +374,15 @@ export function InboxPage() {
                   inquiry={inq}
                   clientName={clientName(inq.client_id)}
                   sourceLabel={labelOf(inq.source)}
-                  onStatusChange={handleStatusChange}
+                  onContextMenu={handleContextMenu}
                 />
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      {overlay}
     </div>
   )
 }
